@@ -1,0 +1,11 @@
+# Settings to note using default value
+# reorder_imports = true
+# reorder_modules = true
+# fn_args_density = "Tall"
+# control_brace_style = "AlwaysSameLine"
+# brace_style = "SameLineWhere"
+
+unstable_features = true
+max_width = 80
+format_strings = true
+normalize_comments = true

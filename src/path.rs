@@ -8,7 +8,7 @@
 // ===========================================================================
 
 // Stdlib imports
-use std::path::Path as StdPath;
+use std::path::{Components, Path as StdPath};
 
 // Third-party imports
 
@@ -31,6 +31,18 @@ impl<'path> AsRef<StdPath> for Path<'path> {
         self.0
     }
 }
+
+// ===========================================================================
+// Attr trait
+// ===========================================================================
+
+pub trait Attr: AsRef<StdPath> {
+    fn components(&self) -> Components {
+        self.as_ref().components()
+    }
+}
+
+impl<'path> Attr for Path<'path> {}
 
 // ===========================================================================
 //

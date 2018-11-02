@@ -1,32 +1,30 @@
-// src/lib.rs
+// src/test/path.rs
 // Copyright (C) 2018 authors and contributors (see AUTHORS file)
 //
 // This file is released under the MIT License.
 
 // ===========================================================================
-// Modules
+// Imports
 // ===========================================================================
 
-pub mod path;
+// Stdlib imports
+use std::path::Path as StdPath;
 
-#[cfg(test)]
-mod test;
+// Third-party imports
 
-// ===========================================================================
-// Externs
-// ===========================================================================
-
-// Stdlib externs
-
-// Third-party externs
-
-// Local externs
+// Local imports
+use crate::Path;
 
 // ===========================================================================
-// Re-exports
+// Tests
 // ===========================================================================
 
-pub use crate::path::Path;
+#[test]
+fn path_ref() {
+    let expected = StdPath::new("/some/path");
+    let newpath = Path::new(&expected);
+    assert_eq!(newpath.as_ref(), expected);
+}
 
 // ===========================================================================
 //

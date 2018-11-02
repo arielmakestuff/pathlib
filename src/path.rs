@@ -1,32 +1,36 @@
-// src/lib.rs
+// src/path.rs
 // Copyright (C) 2018 authors and contributors (see AUTHORS file)
 //
 // This file is released under the MIT License.
 
 // ===========================================================================
-// Modules
+// Imports
 // ===========================================================================
 
-pub mod path;
+// Stdlib imports
+use std::path::Path as StdPath;
 
-#[cfg(test)]
-mod test;
+// Third-party imports
 
-// ===========================================================================
-// Externs
-// ===========================================================================
-
-// Stdlib externs
-
-// Third-party externs
-
-// Local externs
+// Local imports
 
 // ===========================================================================
-// Re-exports
+// Path
 // ===========================================================================
 
-pub use crate::path::Path;
+pub struct Path<'path>(&'path StdPath);
+
+impl<'path> Path<'path> {
+    pub fn new<P: AsRef<StdPath>>(p: &'path P) -> Path {
+        Path(p.as_ref())
+    }
+}
+
+impl<'path> AsRef<StdPath> for Path<'path> {
+    fn as_ref(&self) -> &StdPath {
+        self.0
+    }
+}
 
 // ===========================================================================
 //

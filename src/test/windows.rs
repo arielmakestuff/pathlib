@@ -12,15 +12,15 @@
 // Third-party imports
 
 // Local imports
+use crate::windows;
 
 // ===========================================================================
 // Test constants
 // ===========================================================================
 
 mod constants {
+    use super::*;
     use std::collections::HashSet;
-
-    use crate::windows;
 
     #[test]
     fn main_separator() {
@@ -79,6 +79,39 @@ mod constants {
         assert_eq!(windows::RESERVED_NAMES.len(), 22);
         assert!(windows::RESERVED_NAMES.is_subset(&reserved));
         assert!(reserved.is_subset(&windows::RESERVED_NAMES));
+    }
+}
+
+mod pathops {
+    use super::*;
+    use crate::windows::PathOps;
+
+    mod init {
+        use super::*;
+
+        #[test]
+        fn default() {
+            let expected = &windows::EXT_NAMESPACE_PREFIX[..];
+            let ops: PathOps = Default::default();
+
+            assert_eq!(ops.ext_prefix(), expected);
+        }
+
+        #[test]
+        fn new() {
+            let expected = &windows::EXT_NAMESPACE_PREFIX[..];
+            let ops = PathOps::new();
+
+            assert_eq!(ops.ext_prefix(), expected);
+        }
+
+        #[test]
+        fn different_ext_prefix() {
+            let ext_prefix = "\\\\hello\\world";
+            let ops = PathOps::with_ext_prefix(&ext_prefix[..]);
+
+            assert_eq!(ops.ext_prefix(), &ext_prefix[..]);
+        }
     }
 }
 

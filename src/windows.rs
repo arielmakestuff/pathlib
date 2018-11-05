@@ -51,5 +51,35 @@ lazy_static! {
 }
 
 // ===========================================================================
+// Path Operations
+// ===========================================================================
+
+pub struct PathOps {
+    ext_prefix: &'static str,
+}
+
+impl Default for PathOps {
+    fn default() -> PathOps {
+        PathOps {
+            ext_prefix: &EXT_NAMESPACE_PREFIX[..],
+        }
+    }
+}
+
+impl PathOps {
+    pub fn new() -> PathOps {
+        Default::default()
+    }
+
+    pub fn with_ext_prefix(prefix: &'static str) -> PathOps {
+        PathOps { ext_prefix: prefix }
+    }
+
+    pub fn ext_prefix(&self) -> &'static str {
+        &self.ext_prefix[..]
+    }
+}
+
+// ===========================================================================
 //
 // ===========================================================================

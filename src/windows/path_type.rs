@@ -292,9 +292,7 @@ impl PartialEq<&[u8]> for NonUNCPart {
             return false;
         }
 
-        !other
-            .iter()
-            .any(|b| SEPARATOR.contains(b) || RESTRICTED_CHARS.contains(b))
+        !other.iter().any(|b| RESTRICTED_CHARS.contains(b))
     }
 }
 
@@ -313,9 +311,7 @@ impl PartialEq<&[u8]> for NonDevicePart {
             return false;
         }
 
-        !other
-            .iter()
-            .any(|b| SEPARATOR.contains(b) || RESTRICTED_CHARS.contains(b))
+        !other.iter().any(|b| RESTRICTED_CHARS.contains(b))
     }
 }
 

@@ -42,6 +42,14 @@ lazy_static! {
     };
     static ref UNC_WORD_BYTES: Vec<u8> =
         { "UNC".as_bytes().iter().map(|&l| l as u8).collect() };
+    static ref INVALID_LAST_CHAR: HashSet<u8> = {
+        let chars = " .";
+        let mut all_chars = HashSet::with_capacity(chars.len());
+        for c in chars.chars() {
+            all_chars.insert(c as u8);
+        }
+        all_chars
+    };
 }
 
 // ===========================================================================
@@ -381,6 +389,44 @@ impl PartialEq<&[u8]> for ParentDir {
 }
 
 mk_reverse_equal!(ParentDir, &[u8]);
+
+// ===========================================================================
+// ValidLastChar
+// ===========================================================================
+
+#[derive(Debug)]
+pub struct ValidLastChar;
+
+impl PartialEq<&[u8]> for ValidLastChar {
+    fn eq(&self, other: &&[u8]) -> bool {
+        let last_index = other.len().checked_sub(1);
+        match last_index {
+            None => false,
+            Some(i) => {
+                let last_char = &other[i];
+                !INVALID_LAST_CHAR.contains(last_char)
+                    && !RESTRICTED_CHARS.contains(last_char)
+            }
+        }
+    }
+}
+
+mk_reverse_equal!(ValidLastChar, &[u8]);
+
+// ===========================================================================
+// InvalidLastChar
+// ===========================================================================
+
+#[derive(Debug)]
+pub struct InvalidLastChar;
+
+impl PartialEq<&[u8]> for InvalidLastChar {
+    fn eq(&self, other: &&[u8]) -> bool {
+        *other != ValidLastChar
+    }
+}
+
+mk_reverse_equal!(InvalidLastChar, &[u8]);
 
 // ===========================================================================
 // Tests
@@ -936,8 +982,6 @@ mod test {
     }
 
     mod currentdir {
-        use super::*;
-
         use crate::windows::path_type::CurrentDir;
 
         use proptest::{
@@ -962,8 +1006,6 @@ mod test {
     }
 
     mod parentdir {
-        use super::*;
-
         use crate::windows::path_type::ParentDir;
 
         use proptest::{
@@ -983,6 +1025,62 @@ mod test {
 
                 let dir_bytes = dir.as_bytes();
                 prop_assert_ne!(dir_bytes, ParentDir);
+            }
+        }
+    }
+
+    mod validlastchar {
+        use super::*;
+
+        use crate::windows::path_type::{ValidLastChar, INVALID_LAST_CHAR};
+
+        use proptest::{
+            prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
+            proptest_helper,
+        };
+
+        proptest! {
+            #[test]
+            fn valid_value(comp in COMP_REGEX) {
+                prop_assume!(
+                    !INVALID_LAST_CHAR
+                        .contains(&comp.as_bytes()[comp.len() - 1])
+                );
+
+                prop_assert_eq!(comp.as_bytes(), ValidLastChar);
+            }
+
+            #[test]
+            fn invalid_value(comp in r#".*[. ]"#) {
+                prop_assert_ne!(comp.as_bytes(), ValidLastChar);
+            }
+        }
+    }
+
+    mod invalidlastchar {
+        use super::*;
+
+        use crate::windows::path_type::{InvalidLastChar, INVALID_LAST_CHAR};
+
+        use proptest::{
+            prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
+            proptest_helper,
+        };
+
+        proptest! {
+            #[test]
+            fn valid_value(comp in COMP_REGEX) {
+                prop_assume!(
+                    !INVALID_LAST_CHAR
+                        .contains(&comp.as_bytes()[comp.len() - 1])
+                );
+
+                prop_assert_ne!(comp.as_bytes(), InvalidLastChar);
+            }
+
+            #[test]
+            fn invalid_value(comp in r#".*[. ]"#) {
+                prop_assert_eq!(comp.as_bytes(), InvalidLastChar);
             }
         }
     }

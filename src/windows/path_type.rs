@@ -341,6 +341,27 @@ impl PartialEq<&[u8]> for ServerShare {
 mk_reverse_equal!(ServerShare, &[u8]);
 
 // ===========================================================================
+// CurrentDir
+// ===========================================================================
+
+#[derive(Debug)]
+pub struct CurrentDir;
+
+impl CurrentDir {
+    pub fn as_str() -> &'static str {
+        "."
+    }
+}
+
+impl PartialEq<&[u8]> for CurrentDir {
+    fn eq(&self, other: &&[u8]) -> bool {
+        *other == b"."
+    }
+}
+
+mk_reverse_equal!(CurrentDir, &[u8]);
+
+// ===========================================================================
 // Tests
 // ===========================================================================
 
@@ -889,6 +910,32 @@ mod test {
                 server_share.extend(share.iter());
 
                 prop_assert_ne!(ServerShare, &server_share[..]);
+            }
+        }
+    }
+
+    mod currentdir {
+        use super::*;
+
+        use crate::windows::path_type::CurrentDir;
+
+        use proptest::{
+            prop_assert, prop_assert_ne, prop_assume, proptest, proptest_helper,
+        };
+
+        #[test]
+        fn valid_value() {
+            let dir = ".";
+            assert_eq!(dir.as_bytes(), CurrentDir);
+        }
+
+        proptest! {
+            #[test]
+            fn invalid_value(dir in r#"[^/\\]"#) {
+                prop_assume!(dir != ".");
+
+                let dir_bytes = dir.as_bytes();
+                prop_assert_ne!(dir_bytes, CurrentDir);
             }
         }
     }

@@ -362,6 +362,27 @@ impl PartialEq<&[u8]> for CurrentDir {
 mk_reverse_equal!(CurrentDir, &[u8]);
 
 // ===========================================================================
+// ParentDir
+// ===========================================================================
+
+#[derive(Debug)]
+pub struct ParentDir;
+
+impl ParentDir {
+    pub fn as_str() -> &'static str {
+        ".."
+    }
+}
+
+impl PartialEq<&[u8]> for ParentDir {
+    fn eq(&self, other: &&[u8]) -> bool {
+        *other == b".."
+    }
+}
+
+mk_reverse_equal!(ParentDir, &[u8]);
+
+// ===========================================================================
 // Tests
 // ===========================================================================
 
@@ -936,6 +957,32 @@ mod test {
 
                 let dir_bytes = dir.as_bytes();
                 prop_assert_ne!(dir_bytes, CurrentDir);
+            }
+        }
+    }
+
+    mod parentdir {
+        use super::*;
+
+        use crate::windows::path_type::ParentDir;
+
+        use proptest::{
+            prop_assert, prop_assert_ne, prop_assume, proptest, proptest_helper,
+        };
+
+        #[test]
+        fn valid_value() {
+            let dir = "..";
+            assert_eq!(dir.as_bytes(), ParentDir);
+        }
+
+        proptest! {
+            #[test]
+            fn invalid_value(dir in r#"[^/\\]"#) {
+                prop_assume!(dir != "..");
+
+                let dir_bytes = dir.as_bytes();
+                prop_assert_ne!(dir_bytes, ParentDir);
             }
         }
     }

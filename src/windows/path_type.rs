@@ -296,11 +296,11 @@ pub struct NonUNCPart;
 
 impl PartialEq<&[u8]> for NonUNCPart {
     fn eq(&self, other: &&[u8]) -> bool {
-        if *other == UNCPart || *other == Device {
-            return false;
+        if *other == UNCPart || *other == CurrentDir || *other == ParentDir {
+            false
+        } else {
+            *other == NonDevicePart
         }
-
-        !other.iter().any(|b| RESTRICTED_CHARS.contains(b))
     }
 }
 

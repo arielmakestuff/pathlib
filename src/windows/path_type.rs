@@ -745,7 +745,8 @@ mod test {
         use super::*;
 
         use crate::windows::path_type::{
-            Device, NonUNCPart, UNCPart, RESERVED_NAMES, SEPARATOR,
+            Device, NonUNCPart, UNCPart, INVALID_LAST_CHAR, RESERVED_NAMES,
+            SEPARATOR,
         };
 
         use proptest::{
@@ -756,6 +757,10 @@ mod test {
         proptest! {
             #[test]
             fn valid_value(s in COMP_REGEX) {
+                prop_assume!(
+                    !INVALID_LAST_CHAR.contains(&s.as_bytes()[s.len() - 1])
+                );
+
                 let bytes: Vec<u8> = s.bytes().map(|b| b as u8).collect();
                 prop_assume!(&bytes[..] != UNCPart && &bytes[..] != Device);
                 prop_assert_eq!(NonUNCPart, &bytes[..]);
@@ -793,6 +798,23 @@ mod test {
                 }
                 prop_assert_ne!(NonUNCPart, &bytes[..]);
             }
+
+            #[test]
+            fn ne_invalid_lastchar(s in r#".*[ .]"#) {
+                let bytes: Vec<u8> = s.bytes()
+                    .map(|b| b as u8).collect();
+                prop_assume!(&bytes[..] != UNCPart
+                             && &bytes[..] != Device);
+
+                prop_assert_ne!(NonUNCPart, &bytes[..]);
+            }
+
+            #[test]
+            fn ne_invalid_dirname(s in r#"([.])|([.][.])"#) {
+                let bytes: Vec<u8> = s.bytes()
+                    .map(|b| b as u8).collect();
+                prop_assert_ne!(NonUNCPart, &bytes[..]);
+            }
         }
     }
 
@@ -800,7 +822,7 @@ mod test {
         use super::*;
 
         use crate::windows::path_type::{
-            Device, NonDevicePart, RESERVED_NAMES, SEPARATOR,
+            Device, NonDevicePart, INVALID_LAST_CHAR, RESERVED_NAMES, SEPARATOR,
         };
 
         use proptest::{
@@ -812,7 +834,11 @@ mod test {
             #[test]
             fn valid_value(s in COMP_REGEX) {
                 let bytes: Vec<u8> = s.bytes().map(|b| b as u8).collect();
-                prop_assume!(&bytes[..] != Device);
+                prop_assume!(
+                    &bytes[..] != Device
+                    && !INVALID_LAST_CHAR
+                           .contains(&bytes[s.len() - 1])
+                 );
                 prop_assert_eq!(NonDevicePart, &bytes[..]);
             }
 
@@ -845,6 +871,21 @@ mod test {
                 if bytes.iter().all(|b| !SEPARATOR.contains(b)) {
                     bytes.push(sep.bytes().nth(0).unwrap() as u8);
                 }
+                prop_assert_ne!(NonDevicePart, &bytes[..]);
+            }
+
+            #[test]
+            fn ne_invalid_lastchar(s in r#".*[ .]"#) {
+                let bytes: Vec<u8> = s.bytes()
+                    .map(|b| b as u8).collect();
+
+                prop_assert_ne!(NonDevicePart, &bytes[..]);
+            }
+
+            #[test]
+            fn ne_invalid_dirname(s in r#"([.])|([.][.])"#) {
+                let bytes: Vec<u8> = s.bytes()
+                    .map(|b| b as u8).collect();
                 prop_assert_ne!(NonDevicePart, &bytes[..]);
             }
         }

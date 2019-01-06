@@ -429,6 +429,32 @@ impl PartialEq<&[u8]> for InvalidLastChar {
 mk_reverse_equal!(InvalidLastChar, &[u8]);
 
 // ===========================================================================
+// FileExtension
+// ===========================================================================
+
+#[derive(Debug)]
+pub struct FileExtension;
+
+impl PartialEq<&[u8]> for FileExtension {
+    fn eq(&self, other: &&[u8]) -> bool {
+        let len = other.len();
+        if len <= 1 || *other == InvalidLastChar || other[0] != b'.' {
+            return false;
+        }
+
+        // Already confirmed first and last char, only need to check if the
+        // other chars are valid
+        let found_invalid_char = &other[1..len - 1]
+            .iter()
+            .any(|el| *el == b'.' || RESTRICTED_CHARS.contains(el));
+
+        !found_invalid_char
+    }
+}
+
+mk_reverse_equal!(FileExtension, &[u8]);
+
+// ===========================================================================
 // Tests
 // ===========================================================================
 
@@ -1122,6 +1148,86 @@ mod test {
             #[test]
             fn invalid_value(comp in r#".*[. ]"#) {
                 prop_assert_eq!(comp.as_bytes(), InvalidLastChar);
+            }
+        }
+    }
+
+    mod fileextension {
+        use super::*;
+
+        use crate::windows::path_type::{FileExtension, ValidLastChar};
+
+        use proptest::{
+            prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
+            proptest_helper,
+        };
+
+        const INVALID_CHARS: &str = r#"[/\\<>:"|?*\x00-\x1F]+"#;
+        const VALID_CHARS: &str = r#"[^./\\<>:"|?*\x00-\x1F]+"#;
+
+        #[test]
+        fn empty_string() {
+            let empty = "".as_bytes();
+            assert_ne!(empty, FileExtension);
+        }
+
+        proptest! {
+            #[test]
+            fn invalid_last_char(head in COMP_REGEX,
+                                 tail in r"[ \.]")
+            {
+                let name = format!(".{head}{tail}", head = head, tail = tail);
+                prop_assert_ne!(name.as_bytes(), FileExtension);
+            }
+
+            #[test]
+            fn single_char_is_invalid(name in CHAR_REGEX) {
+                prop_assert_ne!(name.as_bytes(), FileExtension);
+            }
+
+            #[test]
+            fn non_period_head_is_invalid(head in CHAR_REGEX,
+                                          tail in COMP_REGEX)
+            {
+                prop_assume!(
+                    head != "."
+                    && tail.as_bytes() == ValidLastChar
+                );
+
+                let name = format!("{}{}", head, tail);
+                prop_assert_ne!(name.as_bytes(), FileExtension);
+            }
+
+            #[test]
+            fn restricted_char_is_invalid(first in COMP_REGEX,
+                                          last in COMP_REGEX,
+                                          invalid in INVALID_CHARS)
+            {
+                prop_assume!(last.as_bytes() == ValidLastChar);
+
+                let name = format!(".{}{}{}", first, invalid, last);
+                prop_assert_ne!(name.as_bytes(), FileExtension);
+            }
+
+            #[test]
+            fn period_char_is_invalid(first in COMP_REGEX,
+                                      last in COMP_REGEX)
+            {
+                prop_assume!(last.as_bytes() == ValidLastChar);
+
+                let name = format!(".{}.{}", first, last);
+                prop_assert_ne!(name.as_bytes(), FileExtension);
+            }
+
+            #[test]
+            fn valid_extension(ext in VALID_CHARS)
+            {
+                let name = format!(".{}", ext);
+                let bytes = name.as_bytes();
+
+                prop_assume!(bytes == ValidLastChar);
+
+                prop_assert_eq!(bytes, FileExtension);
             }
         }
     }

@@ -224,6 +224,8 @@ mod test {
 
     // Exclude restricted printable chars and any char with ascii code 0 - 31
     const COMP_REGEX: &str = r#"[^/\\<>:"|?*\x00-\x1F]+"#;
+    const VALID_CHARS: &str =
+        r#"[^/\\<>:"|?*\x00-\x1F]*[^./\\<>:"|?*\x00-\x1F ]+"#;
 
     mod verbatim {
         use super::*;
@@ -271,7 +273,7 @@ mod test {
         proptest! {
             #[test]
             fn return_only_first_component(
-                comp in prop::collection::vec(COMP_REGEX, 1..256),
+                comp in prop::collection::vec(VALID_CHARS, 1..256),
                 sep in prop_oneof!(Just("/"), Just(r#"\"#))
             ) {
                 // --------------------
@@ -368,9 +370,9 @@ mod test {
         proptest! {
             #[test]
             fn return_only_server_share(
-                server in COMP_REGEX,
-                share in COMP_REGEX,
-                comp in prop::collection::vec(COMP_REGEX, 0..256),
+                server in VALID_CHARS,
+                share in VALID_CHARS,
+                comp in prop::collection::vec(VALID_CHARS, 0..256),
                 sep in prop_oneof!(Just("/"), Just(r#"\"#))
             ) {
                 // --------------------
@@ -488,7 +490,7 @@ mod test {
             #[test]
             fn return_only_drive(
                 drive in r#"[a-zA-Z]"#,
-                comp in prop::collection::vec(COMP_REGEX, 0..256),
+                comp in prop::collection::vec(VALID_CHARS, 0..256),
                 sep in prop_oneof!(Just("/"), Just(r#"\"#))
             ) {
                 // --------------------
@@ -718,9 +720,9 @@ mod test {
         proptest! {
             #[test]
             fn return_only_server_share(
-                server in COMP_REGEX,
-                share in COMP_REGEX,
-                comp in prop::collection::vec(COMP_REGEX, 0..256),
+                server in VALID_CHARS,
+                share in VALID_CHARS,
+                comp in prop::collection::vec(VALID_CHARS, 0..256),
                 sep in prop_oneof!(Just("/"), Just(r#"\"#))
             ) {
                 // --------------------
@@ -837,7 +839,7 @@ mod test {
             #[test]
             fn return_only_drive(
                 drive in r#"[a-zA-Z]"#,
-                comp in prop::collection::vec(COMP_REGEX, 0..256),
+                comp in prop::collection::vec(VALID_CHARS, 0..256),
                 sep in prop_oneof!(Just("/"), Just(r#"\"#)),
                 include_root in prop::bool::ANY
             ) {

@@ -27,7 +27,7 @@ use lazy_static::lazy_static;
 
 // Local imports
 use self::match_prefix::match_prefix;
-use self::path_type::NonDevicePart;
+use self::path_type::{Device, NonDevicePart};
 
 // ===========================================================================
 // Constants
@@ -86,9 +86,15 @@ lazy_static! {
 
 pub type PathComponent<'path> = Result<Component<'path>, ParseError<'path>>;
 
+#[derive(Debug, Clone, Copy)]
+pub enum ParseErrorKind {
+    InvalidCharacter,
+    RestrictedName,
+}
+
 #[derive(Debug, Display)]
 #[display(
-    fmt = "{:?}: unable to parse component '{:?}' range {}..{}: {}",
+    fmt = "{:?}: unable to parse component {:?} range {}..{}: {}",
     path,
     component,
     start,
@@ -96,11 +102,18 @@ pub type PathComponent<'path> = Result<Component<'path>, ParseError<'path>>;
     msg
 )]
 pub struct ParseError<'path> {
+    _kind: ParseErrorKind,
     component: &'path OsStr,
     path: &'path OsStr,
     start: usize,
     end: usize,
     msg: String,
+}
+
+impl<'path> ParseError<'path> {
+    pub fn kind(&self) -> ParseErrorKind {
+        self._kind
+    }
 }
 
 impl<'path> Error for ParseError<'path> {
@@ -282,7 +295,11 @@ impl<'path> PathIterator<'path> {
     ) -> Result<Component<'path>, ParseError<'path>> {
         let comp_str = as_str(part);
         if part != NonDevicePart {
-            self.parse_error(comp_str)
+            if part == Device {
+                self.invalid_name(comp_str)
+            } else {
+                self.invalid_char(comp_str)
+            }
         } else {
             let ret = match comp_str {
                 "." => Component::CurDir,
@@ -293,15 +310,36 @@ impl<'path> PathIterator<'path> {
         }
     }
 
-    fn parse_error(
+    fn invalid_name(
         &mut self,
         part: &'path str,
     ) -> Result<Component<'path>, ParseError<'path>> {
         // Return None for every call to next() after this
         self.parse_state = PathParseState::Finish;
 
-        let msg = String::from("Path component includes invalid character");
+        let msg = String::from("component uses a restricted name");
         let err = ParseError {
+            _kind: ParseErrorKind::RestrictedName,
+            component: OsStr::new(part),
+            path: as_osstr(self.path),
+            start: self.cur,
+            end: self.cur + part.len(),
+            msg: msg,
+        };
+
+        Err(err)
+    }
+
+    fn invalid_char(
+        &mut self,
+        part: &'path str,
+    ) -> Result<Component<'path>, ParseError<'path>> {
+        // Return None for every call to next() after this
+        self.parse_state = PathParseState::Finish;
+
+        let msg = String::from("path component contains an invalid character");
+        let err = ParseError {
+            _kind: ParseErrorKind::InvalidCharacter,
             component: OsStr::new(part),
             path: as_osstr(self.path),
             start: self.cur,

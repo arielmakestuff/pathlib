@@ -17,6 +17,7 @@ mod path_type;
 // Stdlib imports
 // use std::cmp::PartialEq;
 use std::collections::HashSet;
+use std::error::Error;
 use std::ffi::OsStr;
 use std::path::Prefix;
 use std::str;
@@ -83,6 +84,31 @@ lazy_static! {
 // PathIterator
 // ===========================================================================
 
+pub type PathComponent<'path> = Result<Component<'path>, ParseError<'path>>;
+
+#[derive(Debug, Display)]
+#[display(
+    fmt = "{:?}: unable to parse component '{:?}' range {}..{}: {}",
+    path,
+    component,
+    start,
+    end,
+    msg
+)]
+pub struct ParseError<'path> {
+    component: &'path OsStr,
+    path: &'path OsStr,
+    start: usize,
+    end: usize,
+    msg: String,
+}
+
+impl<'path> Error for ParseError<'path> {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        None
+    }
+}
+
 // The unsafe is safe since we're not modifying the slice at all, and we will
 // only be checking for ascii characters
 fn as_str<'path>(path: &'path [u8]) -> &'path str {
@@ -100,13 +126,6 @@ pub enum Component<'path> {
     CurDir,
     ParentDir,
     Normal(&'path OsStr),
-    Error {
-        component: &'path OsStr,
-        path: &'path OsStr,
-        start: usize,
-        end: usize,
-        msg: String,
-    },
 }
 
 impl<'path> Component<'path> {
@@ -117,7 +136,6 @@ impl<'path> Component<'path> {
             Component::CurDir => OsStr::new("."),
             Component::ParentDir => OsStr::new(".."),
             Component::Normal(comp) => comp,
-            Component::Error { component, .. } => component,
         }
     }
 }
@@ -170,7 +188,7 @@ impl<'path> PathIterator<'path> {
         }
     }
 
-    fn parse_prefix(&mut self) -> Option<Component<'path>> {
+    fn parse_prefix(&mut self) -> Option<PathComponent<'path>> {
         let mut verbatimdisk = false;
         let mut ret = None;
         if let Some((end, prefix)) = match_prefix(self.path) {
@@ -180,7 +198,7 @@ impl<'path> PathIterator<'path> {
             let prefix_comp = PrefixComponent::new(&self.path[..end], prefix);
             self.cur = end;
 
-            ret = Some(Component::Prefix(prefix_comp));
+            ret = Some(Ok(Component::Prefix(prefix_comp)));
         }
 
         self.parse_state = PathParseState::Prefix { verbatimdisk };
@@ -192,7 +210,10 @@ impl<'path> PathIterator<'path> {
         self.parse_root(verbatimdisk)
     }
 
-    fn parse_root(&mut self, verbatimdisk: bool) -> Option<Component<'path>> {
+    fn parse_root(
+        &mut self,
+        verbatimdisk: bool,
+    ) -> Option<PathComponent<'path>> {
         if self.cur == self.path.len() {
             self.parse_state = PathParseState::Finish;
             return None;
@@ -208,13 +229,14 @@ impl<'path> PathIterator<'path> {
         if verbatimdisk || is_root {
             let end = self.cur;
             let start = end - 1;
-            return Some(Component::RootDir(as_osstr(&self.path[start..end])));
+            let ret = Component::RootDir(as_osstr(&self.path[start..end]));
+            return Some(Ok(ret));
         }
 
         self.parse_component()
     }
 
-    fn parse_component(&mut self) -> Option<Component<'path>> {
+    fn parse_component(&mut self) -> Option<PathComponent<'path>> {
         let end = self.path.len();
         let cur = self.cur;
 
@@ -230,7 +252,7 @@ impl<'path> PathIterator<'path> {
                 self.cur = i + 1;
                 let part = &self.path[cur..i];
                 let comp = if part.len() == 0 {
-                    Component::CurDir
+                    Ok(Component::CurDir)
                 } else {
                     self.to_comp(part)
                 };
@@ -239,7 +261,11 @@ impl<'path> PathIterator<'path> {
             }
         }
 
-        self.parse_state = PathParseState::PathComponent;
+        match self.parse_state {
+            PathParseState::Finish => {}
+            _ => self.parse_state = PathParseState::PathComponent,
+        }
+
         match ret {
             Some(_) => ret,
             None => {
@@ -250,38 +276,47 @@ impl<'path> PathIterator<'path> {
         }
     }
 
-    fn to_comp(&mut self, part: &'path [u8]) -> Component<'path> {
+    fn to_comp(
+        &mut self,
+        part: &'path [u8],
+    ) -> Result<Component<'path>, ParseError<'path>> {
         let comp_str = as_str(part);
         if part != NonDevicePart {
             self.parse_error(comp_str)
         } else {
-            match comp_str {
+            let ret = match comp_str {
                 "." => Component::CurDir,
                 ".." => Component::ParentDir,
                 _ => Component::Normal(OsStr::new(comp_str)),
-            }
+            };
+            Ok(ret)
         }
     }
 
-    fn parse_error(&mut self, part: &'path str) -> Component<'path> {
+    fn parse_error(
+        &mut self,
+        part: &'path str,
+    ) -> Result<Component<'path>, ParseError<'path>> {
         // Return None for every call to next() after this
         self.parse_state = PathParseState::Finish;
 
         let msg = String::from("Path component includes invalid character");
-        Component::Error {
+        let err = ParseError {
             component: OsStr::new(part),
             path: as_osstr(self.path),
             start: self.cur,
             end: self.cur + part.len(),
             msg: msg,
-        }
+        };
+
+        Err(err)
     }
 }
 
 impl<'path> Iterator for PathIterator<'path> {
-    type Item = Component<'path>;
+    type Item = PathComponent<'path>;
 
-    fn next(&mut self) -> Option<Component<'path>> {
+    fn next(&mut self) -> Option<PathComponent<'path>> {
         match self.parse_state {
             PathParseState::Start => self.parse_prefix(),
             PathParseState::Prefix { verbatimdisk } => {

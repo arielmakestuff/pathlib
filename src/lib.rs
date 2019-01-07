@@ -20,6 +20,8 @@ mod test;
 // Stdlib externs
 
 // Third-party externs
+#[macro_use]
+extern crate derive_more;
 
 // Local externs
 

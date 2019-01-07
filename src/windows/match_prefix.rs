@@ -226,6 +226,8 @@ mod test {
     const COMP_REGEX: &str = r#"[^/\\<>:"|?*\x00-\x1F]+"#;
     const VALID_CHARS: &str =
         r#"[^/\\<>:"|?*\x00-\x1F]*[^./\\<>:"|?*\x00-\x1F ]+"#;
+    const VALID_CHARS_NOEXT: &str =
+        r#"[^./\\<>:"|?*\x00-\x1F]*[^./\\<>:"|?*\x00-\x1F ]+"#;
 
     mod verbatim {
         use super::*;
@@ -370,8 +372,8 @@ mod test {
         proptest! {
             #[test]
             fn return_only_server_share(
-                server in VALID_CHARS,
-                share in VALID_CHARS,
+                server in VALID_CHARS_NOEXT,
+                share in VALID_CHARS_NOEXT,
                 comp in prop::collection::vec(VALID_CHARS, 0..256),
                 sep in prop_oneof!(Just("/"), Just(r#"\"#))
             ) {

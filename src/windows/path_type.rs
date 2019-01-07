@@ -23,6 +23,7 @@ use std::fmt;
 
 // Third-party imports
 use lazy_static::lazy_static;
+use unicode_segmentation::UnicodeSegmentation;
 
 // Local imports
 use super::{DRIVE_LETTERS, RESERVED_NAMES, RESTRICTED_CHARS, SEPARATOR};
@@ -198,10 +199,28 @@ pub struct Device;
 impl PartialEq<&[u8]> for Device {
     fn eq(&self, other: &&[u8]) -> bool {
         let v: Vec<u8> = other.iter().map(|&e| e).collect();
-        let s = match String::from_utf8(v) {
+        let mut s = match String::from_utf8(v) {
             Err(_) => return false,
             Ok(s) => s.to_uppercase(),
         };
+
+        let ext_start = {
+            let s_iter = UnicodeSegmentation::graphemes(s.as_str(), true);
+            let mut index = 0;
+            s_iter.fold(0, |res, s| {
+                if s == "." {
+                    index = res;
+                }
+                res + s.len()
+            });
+
+            index
+        };
+
+        if ext_start > 0 {
+            s = (&s[..ext_start]).to_owned();
+        }
+
         RESERVED_NAMES.contains(&s)
     }
 }
@@ -463,6 +482,8 @@ mod test {
     // Exclude restricted printable chars and any char with ascii code 0 - 31
     const CHAR_REGEX: &str = r#"[/\\<>:"|?*\x00-\x1F]"#;
     const COMP_REGEX: &str = r#"[^/\\<>:"|?*\x00-\x1F]+"#;
+    const VALID_CHARS_NOEXT: &str =
+        r#"[^./\\<>:"|?*\x00-\x1F]*[^./\\<>:"|?*\x00-\x1F ]+"#;
 
     mod disk {
         use crate::windows::path_type::{Disk, DRIVE_LETTERS};
@@ -611,7 +632,11 @@ mod test {
     mk_slash_type_test!(dotslash, DotSlash, r#"\.[/\\]"#, '.');
 
     mod device {
-        use crate::windows::path_type::{Device, RESERVED_NAMES};
+        use super::*;
+
+        use crate::windows::path_type::{
+            Device, FileExtension, RESERVED_NAMES,
+        };
 
         use proptest::{
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
@@ -620,12 +645,20 @@ mod test {
 
         proptest! {
             #[test]
-            fn valid_value(i in 0..RESERVED_NAMES.len()) {
+            fn valid_value(i in 0..RESERVED_NAMES.len(),
+                           ext in VALID_CHARS_NOEXT)
+            {
                 let arr: Vec<&[u8]> = RESERVED_NAMES.iter()
                     .map(|s| s.as_bytes()).collect();
                 let val: Vec<u8> = arr[i].iter()
                     .map(|&b| b as u8).collect();
                 prop_assert_eq!(Device, &val[..]);
+
+                let mut val_ext: Vec<u8> = val.clone();
+                val_ext.push(b'.');
+                val_ext.extend(ext.bytes());
+                prop_assert_eq!(FileExtension, &val_ext[val.len()..]);
+                prop_assert_eq!(Device, &val_ext[..]);
             }
 
             #[test]

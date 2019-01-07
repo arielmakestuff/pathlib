@@ -249,7 +249,6 @@ impl<'path> PathIterator<'path> {
         for i in cur..end {
             let cur_char = &self.path[i];
             if SEPARATOR.contains(cur_char) {
-                self.cur = i + 1;
                 let part = &self.path[cur..i];
                 let comp = if part.len() == 0 {
                     Ok(Component::CurDir)
@@ -257,6 +256,7 @@ impl<'path> PathIterator<'path> {
                     self.to_comp(part)
                 };
                 ret = Some(comp);
+                self.cur = i + 1;
                 break;
             }
         }
@@ -269,8 +269,8 @@ impl<'path> PathIterator<'path> {
         match ret {
             Some(_) => ret,
             None => {
-                self.cur = end;
                 let comp = self.to_comp(&self.path[cur..end]);
+                self.cur = end;
                 Some(comp)
             }
         }

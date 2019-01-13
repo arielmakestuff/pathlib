@@ -334,7 +334,11 @@ pub struct NonDevicePart;
 
 impl PartialEq<&[u8]> for NonDevicePart {
     fn eq(&self, other: &&[u8]) -> bool {
-        if *other == Device || *other == InvalidLastChar {
+        if *other == Device
+            || (*other != CurrentDir
+                && *other != ParentDir
+                && *other == InvalidLastChar)
+        {
             return false;
         }
 

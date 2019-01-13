@@ -86,13 +86,13 @@ lazy_static! {
 
 pub type PathComponent<'path> = Result<Component<'path>, ParseError<'path>>;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ParseErrorKind {
     InvalidCharacter,
     RestrictedName,
 }
 
-#[derive(Debug, Display)]
+#[derive(Debug, Display, PartialEq, Eq)]
 #[display(
     fmt = "{:?}: unable to parse component {:?} range {}..{}: {}",
     path,

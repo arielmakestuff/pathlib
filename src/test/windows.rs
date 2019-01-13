@@ -8,41 +8,210 @@
 // ===========================================================================
 
 // Stdlib imports
+use std::ffi::OsStr;
+use std::path::Prefix;
 
 // Third-party imports
 
 // Local imports
-use crate::windows::{Component, PathIterator};
+use crate::windows::{
+    Component, ParseErrorKind, PathComponent, PathIterator, PrefixComponent,
+};
 
 // ===========================================================================
 // Tests
 // ===========================================================================
 
 #[test]
-fn test_tmp() {
-    // let path = br#"\\?\UNC\server\share"#;
-    let path = br#"\\?\UNC"#;
-    // let path = br#"."#;
+fn verbatim_path<'path>() {
+    let path = br"\\?\hello\world";
+
     let iter = PathIterator::new(path);
-    // let mut comp = iter.next();
-    // println!("WHAT: {:?}", comp);
+    let comp: Vec<PathComponent> = iter.collect();
+    assert_eq!(comp.len(), 3);
 
-    // comp = iter.next();
-    // println!("WHAT: {:?}", comp);
+    let expected: Vec<PathComponent<'path>> = vec![
+        Ok(Component::Prefix(PrefixComponent::new(
+            br"\\?\hello",
+            Prefix::Verbatim(OsStr::new(r"hello")),
+        ))),
+        Ok(Component::RootDir(OsStr::new(r"\"))),
+        Ok(Component::Normal(OsStr::new(r"world"))),
+    ];
 
-    // comp = iter.next();
-    // println!("WHAT: {:?}", comp);
+    assert_eq!(comp, expected);
+}
 
-    // comp = iter.next();
-    // println!("WHAT: {:?}", comp);
+#[test]
+fn invalid_filename<'path>() {
+    // --------------------
+    // GIVEN
+    // --------------------
+    // an absolute path with a file using a restricted name
+    let path = br"\\?\hello\nul.txt";
 
-    // comp = iter.next();
-    // println!("WHAT: {:?}", comp);
+    // --------------------
+    // WHEN
+    // --------------------
+    // iterating over the path
+    let iter = PathIterator::new(path);
+    let comp: Vec<PathComponent> = iter.collect();
 
-    // comp = iter.next();
-    // println!("WHAT: {:?}", comp);
-    let comp: Vec<Component> = iter.collect();
-    println!("WHAT: {:?}", comp);
+    // --------------------
+    // THEN
+    // --------------------
+    // the returned value is a vec with 3 elements and
+    // the first 2 elements of the vec are prefix and rootdir
+    //     components respectively and
+    // the last element is an error and
+    // the error is a ParseErrorKind::RestrictedName kind
+    assert_eq!(comp.len(), 3);
+
+    let expected_ok: Vec<PathComponent<'path>> = vec![
+        Ok(Component::Prefix(PrefixComponent::new(
+            br"\\?\hello",
+            Prefix::Verbatim(OsStr::new(r"hello")),
+        ))),
+        Ok(Component::RootDir(OsStr::new(r"\"))),
+    ];
+
+    assert_eq!(&comp[..2], &expected_ok[..]);
+
+    // Check last element is an error
+    let result = match &comp[2] {
+        Ok(_) => false,
+        Err(e) => match e.kind() {
+            ParseErrorKind::RestrictedName => true,
+            _ => false,
+        },
+    };
+
+    assert!(result);
+}
+
+#[test]
+fn relative_path<'path>() {
+    let path = br"hello\world";
+
+    let iter = PathIterator::new(path);
+    let comp: Vec<PathComponent> = iter.collect();
+    assert_eq!(comp.len(), 2);
+
+    let expected: Vec<PathComponent<'path>> = vec![
+        Ok(Component::Normal(OsStr::new(r"hello"))),
+        Ok(Component::Normal(OsStr::new(r"world"))),
+    ];
+
+    assert_eq!(comp, expected);
+}
+
+#[test]
+fn double_path_separator<'path>() {
+    let path = br"hello\\world";
+
+    let iter = PathIterator::new(path);
+    let comp: Vec<PathComponent> = iter.collect();
+    assert_eq!(comp.len(), 3);
+
+    let expected: Vec<PathComponent<'path>> = vec![
+        Ok(Component::Normal(OsStr::new(r"hello"))),
+        Ok(Component::CurDir),
+        Ok(Component::Normal(OsStr::new(r"world"))),
+    ];
+
+    assert_eq!(comp, expected);
+}
+
+#[test]
+fn curdir<'path>() {
+    let path = br"hello\world\.\what\now";
+
+    let iter = PathIterator::new(path);
+    let comp: Vec<PathComponent> = iter.collect();
+    assert_eq!(comp.len(), 5);
+
+    let expected: Vec<PathComponent<'path>> = vec![
+        Ok(Component::Normal(OsStr::new(r"hello"))),
+        Ok(Component::Normal(OsStr::new(r"world"))),
+        Ok(Component::CurDir),
+        Ok(Component::Normal(OsStr::new(r"what"))),
+        Ok(Component::Normal(OsStr::new(r"now"))),
+    ];
+
+    assert_eq!(comp, expected);
+}
+
+#[test]
+fn parentdir<'path>() {
+    let path = br"hello\world\..\what\now";
+
+    let iter = PathIterator::new(path);
+    let comp: Vec<PathComponent> = iter.collect();
+    assert_eq!(comp.len(), 5);
+
+    let expected: Vec<PathComponent<'path>> = vec![
+        Ok(Component::Normal(OsStr::new(r"hello"))),
+        Ok(Component::Normal(OsStr::new(r"world"))),
+        Ok(Component::ParentDir),
+        Ok(Component::Normal(OsStr::new(r"what"))),
+        Ok(Component::Normal(OsStr::new(r"now"))),
+    ];
+
+    assert_eq!(comp, expected);
+}
+
+#[test]
+fn curdir_at_start<'path>() {
+    let path = br".\hello\world";
+
+    let iter = PathIterator::new(path);
+    let comp: Vec<PathComponent> = iter.collect();
+    assert_eq!(comp.len(), 3);
+
+    let expected: Vec<PathComponent<'path>> = vec![
+        Ok(Component::CurDir),
+        Ok(Component::Normal(OsStr::new(r"hello"))),
+        Ok(Component::Normal(OsStr::new(r"world"))),
+    ];
+
+    assert_eq!(comp, expected);
+}
+
+#[test]
+fn parentdir_at_start<'path>() {
+    let path = br"..\hello\world\";
+
+    let iter = PathIterator::new(path);
+    let comp: Vec<PathComponent> = iter.collect();
+    assert_eq!(comp.len(), 3);
+
+    let expected: Vec<PathComponent<'path>> = vec![
+        Ok(Component::ParentDir),
+        Ok(Component::Normal(OsStr::new(r"hello"))),
+        Ok(Component::Normal(OsStr::new(r"world"))),
+    ];
+
+    assert_eq!(comp, expected);
+}
+
+#[test]
+fn mixed_separator<'path>() {
+    let path = br"hello\world/what\now/brown/cow";
+
+    let iter = PathIterator::new(path);
+    let comp: Vec<PathComponent> = iter.collect();
+    assert_eq!(comp.len(), 6);
+
+    let expected: Vec<PathComponent<'path>> = vec![
+        Ok(Component::Normal(OsStr::new(r"hello"))),
+        Ok(Component::Normal(OsStr::new(r"world"))),
+        Ok(Component::Normal(OsStr::new(r"what"))),
+        Ok(Component::Normal(OsStr::new(r"now"))),
+        Ok(Component::Normal(OsStr::new(r"brown"))),
+        Ok(Component::Normal(OsStr::new(r"cow"))),
+    ];
+
+    assert_eq!(comp, expected);
 }
 
 // ===========================================================================

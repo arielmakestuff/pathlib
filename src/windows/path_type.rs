@@ -1177,6 +1177,11 @@ mod test {
             assert_eq!(dir.as_bytes(), CurrentDir);
         }
 
+        #[test]
+        fn as_str() {
+            assert_eq!(CurrentDir::as_str(), ".");
+        }
+
         proptest! {
             #[test]
             fn invalid_value(dir in r#"[^/\\]"#) {
@@ -1204,6 +1209,11 @@ mod test {
         fn valid_value() {
             let dir = "..";
             assert_eq!(dir.as_bytes(), ParentDir);
+        }
+
+        #[test]
+        fn as_str() {
+            assert_eq!(ParentDir::as_str(), "..");
         }
 
         proptest! {

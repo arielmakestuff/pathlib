@@ -942,6 +942,8 @@ mod test {
             fn ne_invalid_lastchar(s in r#".*[ .]"#) {
                 let bytes: Vec<u8> = s.bytes()
                     .map(|b| b as u8).collect();
+                prop_assume!(&bytes[..] != ParentDir
+                             && &bytes[..] != CurrentDir);
 
                 prop_assert_ne!(NonDevicePart, &bytes[..]);
             }

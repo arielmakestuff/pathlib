@@ -597,9 +597,7 @@ mod test {
 
         prop_compose! {
             fn choose_device()(i in 0..RESERVED_NAMES.len()) -> String {
-                let all_device: Vec<&String> = RESERVED_NAMES
-                    .iter().collect();
-                all_device[i].clone()
+                RESERVED_NAMES.iter().nth(i).unwrap().clone()
             }
         }
 

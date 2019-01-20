@@ -885,7 +885,8 @@ mod test {
         use super::*;
 
         use crate::windows::path_type::{
-            Device, NonDevicePart, INVALID_LAST_CHAR, RESERVED_NAMES, SEPARATOR,
+            CurrentDir, Device, NonDevicePart, ParentDir, INVALID_LAST_CHAR,
+            RESERVED_NAMES, SEPARATOR,
         };
 
         use proptest::{
@@ -946,10 +947,10 @@ mod test {
             }
 
             #[test]
-            fn ne_invalid_dirname(s in r#"([.])|([.][.])"#) {
+            fn ne_reserved_dirname(s in r#"([.])|([.][.])"#) {
                 let bytes: Vec<u8> = s.bytes()
                     .map(|b| b as u8).collect();
-                prop_assert_ne!(NonDevicePart, &bytes[..]);
+                prop_assert_eq!(NonDevicePart, &bytes[..]);
             }
         }
     }

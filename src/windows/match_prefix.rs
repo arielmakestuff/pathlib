@@ -275,7 +275,7 @@ mod test {
         proptest! {
             #[test]
             fn return_only_first_component(
-                comp in prop::collection::vec(VALID_CHARS, 1..256),
+                comp in prop::collection::vec(VALID_CHARS, 1..10),
                 sep in prop_oneof!(Just("/"), Just(r#"\"#))
             ) {
                 // --------------------
@@ -374,7 +374,7 @@ mod test {
             fn return_only_server_share(
                 server in VALID_CHARS_NOEXT,
                 share in VALID_CHARS_NOEXT,
-                comp in prop::collection::vec(VALID_CHARS, 0..256),
+                comp in prop::collection::vec(VALID_CHARS, 0..10),
                 sep in prop_oneof!(Just("/"), Just(r#"\"#))
             ) {
                 // --------------------
@@ -492,7 +492,7 @@ mod test {
             #[test]
             fn return_only_drive(
                 drive in r#"[a-zA-Z]"#,
-                comp in prop::collection::vec(VALID_CHARS, 0..256),
+                comp in prop::collection::vec(VALID_CHARS, 0..10),
                 sep in prop_oneof!(Just("/"), Just(r#"\"#))
             ) {
                 // --------------------
@@ -617,7 +617,7 @@ mod test {
             #[test]
             fn return_only_device(
                 device in choose_devicens(),
-                comp in prop::collection::vec(COMP_REGEX, 0..256),
+                comp in prop::collection::vec(COMP_REGEX, 0..10),
                 sep in prop_oneof!(Just("/"), Just(r#"\"#)),
                 mk_lower in prop::bool::ANY
             ) {
@@ -724,7 +724,7 @@ mod test {
             fn return_only_server_share(
                 server in VALID_CHARS,
                 share in VALID_CHARS,
-                comp in prop::collection::vec(VALID_CHARS, 0..256),
+                comp in prop::collection::vec(VALID_CHARS, 0..10),
                 sep in prop_oneof!(Just("/"), Just(r#"\"#))
             ) {
                 // --------------------
@@ -841,7 +841,7 @@ mod test {
             #[test]
             fn return_only_drive(
                 drive in r#"[a-zA-Z]"#,
-                comp in prop::collection::vec(VALID_CHARS, 0..256),
+                comp in prop::collection::vec(VALID_CHARS, 0..10),
                 sep in prop_oneof!(Just("/"), Just(r#"\"#)),
                 include_root in prop::bool::ANY
             ) {

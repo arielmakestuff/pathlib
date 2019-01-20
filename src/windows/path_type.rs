@@ -499,6 +499,11 @@ mod test {
             proptest_helper,
         };
 
+        #[test]
+        fn self_equal() {
+            assert_eq!(Disk, Disk);
+        }
+
         proptest! {
             #[test]
             fn valid_value(s in r#"[a-zA-Z][:]"#) {
@@ -533,6 +538,11 @@ mod test {
             proptest_helper,
         };
 
+        #[test]
+        fn self_equal() {
+            assert_eq!(DiskRoot, DiskRoot);
+        }
+
         proptest! {
             #[test]
             fn valid_value(s in r#"[a-zA-Z][:]\\"#) {
@@ -559,6 +569,15 @@ mod test {
         }
     }
 
+    mod separator {
+        use crate::windows::path_type::Separator;
+
+        #[test]
+        fn self_equal() {
+            assert_eq!(Separator, Separator);
+        }
+    }
+
     mod doubleslash {
         use crate::windows::path_type::{DoubleSlash, SEPARATOR};
 
@@ -566,6 +585,11 @@ mod test {
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
             proptest_helper,
         };
+
+        #[test]
+        fn self_equal() {
+            assert_eq!(DoubleSlash, DoubleSlash);
+        }
 
         proptest! {
             #[test]
@@ -602,6 +626,11 @@ mod test {
                     prop_assert, prop_assert_eq, prop_assert_ne, prop_assume,
                     proptest, proptest_helper,
                 };
+
+                #[test]
+                fn self_equal() {
+                    assert_eq!($type_name, $type_name);
+                }
 
                 proptest! {
                     #[test]
@@ -649,6 +678,11 @@ mod test {
             proptest_helper,
         };
 
+        #[test]
+        fn self_equal() {
+            assert_eq!(Device, Device);
+        }
+
         proptest! {
             #[test]
             fn valid_value(i in 0..RESERVED_NAMES.len(),
@@ -687,6 +721,11 @@ mod test {
             proptest_helper,
         };
 
+        #[test]
+        fn self_equal() {
+            assert_eq!(DeviceNamespace, DeviceNamespace);
+        }
+
         proptest! {
             #[test]
             fn valid_value(name in COMP_REGEX) {
@@ -721,6 +760,11 @@ mod test {
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
             proptest_helper,
         };
+
+        #[test]
+        fn self_equal() {
+            assert_eq!(UNCPart, UNCPart);
+        }
 
         #[test]
         fn as_str() {
@@ -774,6 +818,11 @@ mod test {
             proptest_helper,
         };
 
+        #[test]
+        fn self_equal() {
+            assert_eq!(UNCRootPart, UNCRootPart);
+        }
+
         proptest! {
             #[test]
             fn valid_value(u_char in r#"[uU]"#,
@@ -818,6 +867,11 @@ mod test {
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
             proptest_helper,
         };
+
+        #[test]
+        fn self_equal() {
+            assert_eq!(NonUNCPart, NonUNCPart);
+        }
 
         proptest! {
             #[test]
@@ -896,6 +950,11 @@ mod test {
             proptest_helper,
         };
 
+        #[test]
+        fn self_equal() {
+            assert_eq!(NonDevicePart, NonDevicePart);
+        }
+
         proptest! {
             #[test]
             fn valid_value(s in COMP_REGEX) {
@@ -970,6 +1029,11 @@ mod test {
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
             proptest_helper,
         };
+
+        #[test]
+        fn self_equal() {
+            assert_eq!(ServerShare, ServerShare);
+        }
 
         proptest! {
             #[test]
@@ -1098,6 +1162,11 @@ mod test {
         };
 
         #[test]
+        fn self_equal() {
+            assert_eq!(CurrentDir, CurrentDir);
+        }
+
+        #[test]
         fn valid_value() {
             let dir = ".";
             assert_eq!(dir.as_bytes(), CurrentDir);
@@ -1120,6 +1189,11 @@ mod test {
         use proptest::{
             prop_assert, prop_assert_ne, prop_assume, proptest, proptest_helper,
         };
+
+        #[test]
+        fn self_equal() {
+            assert_eq!(ParentDir, ParentDir);
+        }
 
         #[test]
         fn valid_value() {
@@ -1148,6 +1222,11 @@ mod test {
             proptest_helper,
         };
 
+        #[test]
+        fn self_equal() {
+            assert_eq!(ValidLastChar, ValidLastChar);
+        }
+
         proptest! {
             #[test]
             fn valid_value(comp in COMP_REGEX) {
@@ -1175,6 +1254,11 @@ mod test {
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
             proptest_helper,
         };
+
+        #[test]
+        fn self_equal() {
+            assert_eq!(InvalidLastChar, InvalidLastChar);
+        }
 
         proptest! {
             #[test]
@@ -1206,6 +1290,11 @@ mod test {
 
         const INVALID_CHARS: &str = r#"[/\\<>:"|?*\x00-\x1F]+"#;
         const VALID_CHARS: &str = r#"[^./\\<>:"|?*\x00-\x1F]+"#;
+
+        #[test]
+        fn self_equal() {
+            assert_eq!(FileExtension, FileExtension);
+        }
 
         #[test]
         fn empty_string() {

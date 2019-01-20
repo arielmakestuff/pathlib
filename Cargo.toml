@@ -6,7 +6,6 @@ edition = "2018"
 
 [dependencies]
 lazy_static = "1.2.0"
-unicode-segmentation = "1"
 derive_more = "0.13"
 
 [dev-dependencies]

@@ -23,7 +23,6 @@ use std::fmt;
 
 // Third-party imports
 use lazy_static::lazy_static;
-use unicode_segmentation::UnicodeSegmentation;
 
 // Local imports
 use super::{DRIVE_LETTERS, RESERVED_NAMES, RESTRICTED_CHARS, SEPARATOR};
@@ -205,14 +204,16 @@ impl PartialEq<&[u8]> for Device {
         };
 
         let ext_start = {
-            let s_iter = UnicodeSegmentation::graphemes(s.as_str(), true);
             let mut index = 0;
-            s_iter.fold(0, |res, s| {
-                if s == "." {
-                    index = res;
+
+            let s_str = &s[..];
+            for (i, cur_char) in s.chars().enumerate() {
+                if !s_str.is_char_boundary(i) {
+                    continue;
+                } else if cur_char == '.' {
+                    index = i;
                 }
-                res + s.len()
-            });
+            }
 
             index
         };

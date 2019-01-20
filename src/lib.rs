@@ -11,6 +11,7 @@ pub mod path;
 pub mod windows;
 
 #[cfg(test)]
+#[cfg_attr(tarpaulin, skip)]
 mod test;
 
 // ===========================================================================

@@ -483,6 +483,7 @@ mk_reverse_equal!(FileExtension, &[u8]);
 // ===========================================================================
 
 #[cfg(test)]
+#[cfg_attr(tarpaulin, skip)]
 mod test {
     // Exclude restricted printable chars and any char with ascii code 0 - 31
     const CHAR_REGEX: &str = r#"[/\\<>:"|?*\x00-\x1F]"#;

@@ -210,6 +210,7 @@ fn match_devicens(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
 // ===========================================================================
 
 #[cfg(test)]
+#[cfg_attr(tarpaulin, skip)]
 mod test {
     use crate::windows::match_prefix::match_prefix;
     use crate::windows::path_type;

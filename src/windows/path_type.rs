@@ -632,6 +632,11 @@ mod test {
                     assert_eq!($type_name, $type_name);
                 }
 
+                #[test]
+                fn has_debug() {
+                    assert!(format!("{:?}", $type_name).len() > 0,);
+                }
+
                 proptest! {
                     #[test]
                     fn any_separator(s in $first_test) {

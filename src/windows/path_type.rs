@@ -237,7 +237,7 @@ pub struct DeviceNamespace;
 
 impl PartialEq<&[u8]> for DeviceNamespace {
     fn eq(&self, other: &&[u8]) -> bool {
-        other.iter().all(|c| !RESTRICTED_CHARS.contains(c))
+        other.len() > 0 && other.iter().all(|c| !RESTRICTED_CHARS.contains(c))
     }
 }
 

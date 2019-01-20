@@ -224,6 +224,55 @@ mod test {
     const VALID_CHARS_NOEXT: &str =
         r#"[^./\\<>:"|?*\x00-\x1F]*[^./\\<>:"|?*\x00-\x1F ]+"#;
 
+    mod noprefix {
+        use super::*;
+
+        #[test]
+        fn empty_string() {
+            let value = match_prefix(b"");
+            assert_eq!(value, None);
+        }
+
+        #[test]
+        fn doubleslash() {
+            let value = match_prefix(br#"\\"#);
+            assert_eq!(value, None);
+        }
+
+        #[test]
+        fn empty_verbatim() {
+            let value = match_prefix(br#"\\?\"#);
+            assert_eq!(value, None);
+        }
+
+        // string without any separator characters is not a unc prefix
+        #[test]
+        fn unc_noseparator() {
+            let value = match_prefix(br#"\\helloworld"#);
+            assert_eq!(value, None);
+        }
+
+        // string with a server and separator but without a share is not a unc
+        // prefix
+        #[test]
+        fn unc_not_servershare() {
+            let value = match_prefix(br#"\\helloworld\"#);
+            assert_eq!(value, None);
+        }
+
+        #[test]
+        fn verbatimunc_no_separator() {
+            let value = match_prefix(br#"\\?\UNC\helloworld"#);
+            assert_eq!(value, None);
+        }
+
+        #[test]
+        fn devicens_no_device() {
+            let value = match_prefix(br#"\\.\"#);
+            assert_eq!(value, None);
+        }
+    }
+
     mod verbatim {
         use super::*;
 

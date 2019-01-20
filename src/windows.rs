@@ -275,7 +275,7 @@ impl<'path> PathIterator<'path> {
         }
 
         match self.parse_state {
-            PathParseState::Finish => {}
+            PathParseState::Finish | PathParseState::PathComponent => {}
             _ => self.parse_state = PathParseState::PathComponent,
         }
 
@@ -366,6 +366,38 @@ impl<'path> Iterator for PathIterator<'path> {
             PathParseState::Finish => None,
         }
     }
+}
+
+// ===========================================================================
+// For tests
+// ===========================================================================
+
+#[cfg(test)]
+pub mod test {
+    use super::{ParseError, ParseErrorKind};
+    use std::ffi::OsStr;
+
+    pub trait NewParseError<'path> {
+        fn new(
+            kind: ParseErrorKind,
+            component: &'path OsStr,
+            path: &'path OsStr,
+            start: usize,
+            end: usize,
+            msg: String,
+        ) -> ParseError<'path> {
+            ParseError {
+                _kind: kind,
+                component,
+                path,
+                start,
+                end,
+                msg,
+            }
+        }
+    }
+
+    impl<'path> NewParseError<'path> for ParseError<'path> {}
 }
 
 // ===========================================================================

@@ -84,9 +84,6 @@ fn match_doubleslash(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
 
 fn match_verbatim(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
     let mut end = path.len();
-    if end < first {
-        return None;
-    }
 
     for i in first..end {
         if SEPARATOR.contains(&path[i]) {
@@ -123,9 +120,6 @@ fn match_verbatimdisk(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
 // endpoint (from match_doubleslash)
 fn match_unc(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
     let end = path.len();
-    if end == 2 {
-        return None;
-    }
 
     let mut sep_index: Vec<usize> = Vec::with_capacity(2);
     for i in first..end {

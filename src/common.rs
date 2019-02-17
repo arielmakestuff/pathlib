@@ -9,6 +9,7 @@
 
 pub mod error;
 pub(crate) mod path_type;
+pub(crate) mod string;
 
 // ===========================================================================
 // Imports

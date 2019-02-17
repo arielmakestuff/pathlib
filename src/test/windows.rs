@@ -14,9 +14,8 @@ use std::path::Prefix;
 // Third-party imports
 
 // Local imports
-use crate::windows::{
-    Component, ParseErrorKind, PathComponent, PathIterator, PrefixComponent,
-};
+use crate::common::error::*;
+use crate::windows::{Component, PathComponent, PathIterator, PrefixComponent};
 
 // ===========================================================================
 // Tests
@@ -36,13 +35,11 @@ mod public_export {
 
     mod parseerror {
         use super::*;
-        use crate::windows::{test::NewParseError, ParseError};
-        use std::error::Error;
 
         #[test]
         fn source_always_none() {
             let err = ParseError::new(
-                ParseErrorKind::RestrictedName,
+                WindowsErrorKind::RestrictedName.into(),
                 OsStr::new("hello"),
                 as_osstr(b"/hello/world"),
                 1,
@@ -180,7 +177,9 @@ mod pathiterator {
         let result = match &comp[2] {
             Ok(_) => false,
             Err(e) => match e.kind() {
-                ParseErrorKind::InvalidCharacter => true,
+                ParseErrorKind::Windows(WindowsErrorKind::InvalidCharacter) => {
+                    true
+                }
                 _ => false,
             },
         };
@@ -247,7 +246,9 @@ mod pathiterator {
         let result = match &comp[2] {
             Ok(_) => false,
             Err(e) => match e.kind() {
-                ParseErrorKind::RestrictedName => true,
+                ParseErrorKind::Windows(WindowsErrorKind::RestrictedName) => {
+                    true
+                }
                 _ => false,
             },
         };

@@ -17,7 +17,6 @@ mod path_type;
 // Stdlib imports
 // use std::cmp::PartialEq;
 use std::collections::HashSet;
-use std::error::Error;
 use std::ffi::OsStr;
 use std::path::Prefix;
 use std::str;
@@ -28,6 +27,7 @@ use lazy_static::lazy_static;
 // Local imports
 use self::match_prefix::match_prefix;
 use self::path_type::{Device, NonDevicePart};
+use crate::common::error::ParseError;
 
 // ===========================================================================
 // Constants
@@ -95,42 +95,6 @@ pub enum WindowsErrorKind {
 // ===========================================================================
 
 pub type PathComponent<'path> = Result<Component<'path>, ParseError<'path>>;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ParseErrorKind {
-    InvalidCharacter,
-    RestrictedName,
-}
-
-#[derive(Debug, Display, PartialEq, Eq)]
-#[display(
-    fmt = "{:?}: unable to parse component {:?} range {}..{}: {}",
-    path,
-    component,
-    start,
-    end,
-    msg
-)]
-pub struct ParseError<'path> {
-    _kind: ParseErrorKind,
-    component: &'path OsStr,
-    path: &'path OsStr,
-    start: usize,
-    end: usize,
-    msg: String,
-}
-
-impl<'path> ParseError<'path> {
-    pub fn kind(&self) -> ParseErrorKind {
-        self._kind
-    }
-}
-
-impl<'path> Error for ParseError<'path> {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        None
-    }
-}
 
 // The unsafe is safe since we're not modifying the slice at all, and we will
 // only be checking for ascii characters
@@ -328,16 +292,7 @@ impl<'path> PathIterator<'path> {
         self.parse_state = PathParseState::Finish;
 
         let msg = String::from("component uses a restricted name");
-        let err = ParseError {
-            _kind: ParseErrorKind::RestrictedName,
-            component: OsStr::new(part),
-            path: as_osstr(self.path),
-            start: self.cur,
-            end: self.cur + part.len(),
-            msg: msg,
-        };
-
-        Err(err)
+        self.build_error(WindowsErrorKind::RestrictedName, part, msg)
     }
 
     fn invalid_char(
@@ -346,16 +301,24 @@ impl<'path> PathIterator<'path> {
     ) -> Result<Component<'path>, ParseError<'path>> {
         // Return None for every call to next() after this
         self.parse_state = PathParseState::Finish;
-
         let msg = String::from("path component contains an invalid character");
-        let err = ParseError {
-            _kind: ParseErrorKind::InvalidCharacter,
-            component: OsStr::new(part),
-            path: as_osstr(self.path),
-            start: self.cur,
-            end: self.cur + part.len(),
-            msg: msg,
-        };
+        self.build_error(WindowsErrorKind::InvalidCharacter, part, msg)
+    }
+
+    fn build_error(
+        &self,
+        kind: WindowsErrorKind,
+        part: &'path str,
+        msg: String,
+    ) -> Result<Component<'path>, ParseError<'path>> {
+        let err = ParseError::new(
+            kind.into(),
+            OsStr::new(part),
+            as_osstr(self.path),
+            self.cur,
+            self.cur + part.len(),
+            msg,
+        );
 
         Err(err)
     }
@@ -376,38 +339,6 @@ impl<'path> Iterator for PathIterator<'path> {
             PathParseState::Finish => None,
         }
     }
-}
-
-// ===========================================================================
-// For tests
-// ===========================================================================
-
-#[cfg(test)]
-pub mod test {
-    use super::{ParseError, ParseErrorKind};
-    use std::ffi::OsStr;
-
-    pub trait NewParseError<'path> {
-        fn new(
-            kind: ParseErrorKind,
-            component: &'path OsStr,
-            path: &'path OsStr,
-            start: usize,
-            end: usize,
-            msg: String,
-        ) -> ParseError<'path> {
-            ParseError {
-                _kind: kind,
-                component,
-                path,
-                start,
-                end,
-                msg,
-            }
-        }
-    }
-
-    impl<'path> NewParseError<'path> for ParseError<'path> {}
 }
 
 // ===========================================================================

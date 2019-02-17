@@ -26,6 +26,7 @@ use lazy_static::lazy_static;
 
 // Local imports
 use super::{DRIVE_LETTERS, RESERVED_NAMES, RESTRICTED_CHARS, SEPARATOR};
+use crate::mk_reverse_equal;
 
 // ===========================================================================
 // Globals
@@ -49,28 +50,6 @@ lazy_static! {
             all_chars.insert(c as u8);
         }
         all_chars
-    };
-}
-
-// ===========================================================================
-// Helpers
-// ===========================================================================
-
-macro_rules! mk_reverse_equal {
-    ($type:ty, $reverse_type:ty) => {
-        impl PartialEq<$type> for $reverse_type {
-            fn eq(&self, other: &$type) -> bool {
-                other == self
-            }
-        }
-
-        impl PartialEq for $type {
-            fn eq(&self, _other: &$type) -> bool {
-                true
-            }
-        }
-
-        impl Eq for $type {}
     };
 }
 

@@ -284,6 +284,22 @@ mod pathiterator {
 
         assert_eq!(comp, expected);
     }
+
+    #[test]
+    fn multibyte_chars<'path>() {
+        let s = "/multibyte/Löwe 老虎 Léopard";
+        let path = s.as_bytes();
+
+        let iter = PathIterator::new(path);
+        let comp: Vec<PathComponent> = iter.collect();
+        let expected: Vec<PathComponent<'path>> = vec![
+            Ok(Component::RootDir),
+            Ok(Component::Normal(OsStr::new("multibyte"))),
+            Ok(Component::Normal(OsStr::new("Löwe 老虎 Léopard"))),
+        ];
+
+        assert_eq!(comp, expected);
+    }
 }
 
 // ===========================================================================

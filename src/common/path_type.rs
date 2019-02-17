@@ -38,5 +38,47 @@ macro_rules! mk_reverse_equal {
 }
 
 // ===========================================================================
+// CurrentDir
+// ===========================================================================
+
+#[derive(Debug)]
+pub struct CurrentDir;
+
+impl CurrentDir {
+    pub fn as_str() -> &'static str {
+        "."
+    }
+}
+
+impl PartialEq<&[u8]> for CurrentDir {
+    fn eq(&self, other: &&[u8]) -> bool {
+        *other == b"."
+    }
+}
+
+mk_reverse_equal!(CurrentDir, &[u8]);
+
+// ===========================================================================
+// ParentDir
+// ===========================================================================
+
+#[derive(Debug)]
+pub struct ParentDir;
+
+impl ParentDir {
+    pub fn as_str() -> &'static str {
+        ".."
+    }
+}
+
+impl PartialEq<&[u8]> for ParentDir {
+    fn eq(&self, other: &&[u8]) -> bool {
+        *other == b".."
+    }
+}
+
+mk_reverse_equal!(ParentDir, &[u8]);
+
+// ===========================================================================
 //
 // ===========================================================================

@@ -7,13 +7,16 @@
 // Modules
 // ===========================================================================
 
-pub mod path;
-pub mod unix;
-pub mod windows;
+#[macro_use]
+mod common;
 
 #[cfg(test)]
 #[cfg_attr(tarpaulin, skip)]
 mod test;
+
+pub mod path;
+pub mod unix;
+pub mod windows;
 
 // ===========================================================================
 // Externs

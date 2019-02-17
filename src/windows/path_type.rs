@@ -26,6 +26,7 @@ use lazy_static::lazy_static;
 
 // Local imports
 use super::{DRIVE_LETTERS, RESERVED_NAMES, RESTRICTED_CHARS, SEPARATOR};
+use crate::common::path_type::{CurrentDir, ParentDir};
 use crate::mk_reverse_equal;
 
 // ===========================================================================
@@ -350,48 +351,6 @@ impl PartialEq<&[u8]> for ServerShare {
 }
 
 mk_reverse_equal!(ServerShare, &[u8]);
-
-// ===========================================================================
-// CurrentDir
-// ===========================================================================
-
-#[derive(Debug)]
-pub struct CurrentDir;
-
-impl CurrentDir {
-    pub fn as_str() -> &'static str {
-        "."
-    }
-}
-
-impl PartialEq<&[u8]> for CurrentDir {
-    fn eq(&self, other: &&[u8]) -> bool {
-        *other == b"."
-    }
-}
-
-mk_reverse_equal!(CurrentDir, &[u8]);
-
-// ===========================================================================
-// ParentDir
-// ===========================================================================
-
-#[derive(Debug)]
-pub struct ParentDir;
-
-impl ParentDir {
-    pub fn as_str() -> &'static str {
-        ".."
-    }
-}
-
-impl PartialEq<&[u8]> for ParentDir {
-    fn eq(&self, other: &&[u8]) -> bool {
-        *other == b".."
-    }
-}
-
-mk_reverse_equal!(ParentDir, &[u8]);
 
 // ===========================================================================
 // ValidLastChar

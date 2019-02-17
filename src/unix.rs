@@ -30,6 +30,11 @@ use self::path_type::Separator;
 pub type PathComponent<'path> = Result<Component<'path>, ParseError<'path>>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UnixErrorKind {
+    InvalidCharacter,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ParseErrorKind {
     InvalidCharacter,
 }

@@ -8,12 +8,25 @@
 // ===========================================================================
 
 // Stdlib imports
+use std::collections::HashSet;
 
 // Third-party imports
+use lazy_static::lazy_static;
 
 // Local imports
 use crate::mk_reverse_equal;
 
+// ===========================================================================
+// Globals
+// ===========================================================================
+
+lazy_static! {
+    static ref INVALID_CHAR: HashSet<u8> = {
+        let chars = b"/\x00";
+        let all_chars: HashSet<u8> = chars.iter().map(|&c| c).collect();
+        all_chars
+    };
+}
 // ===========================================================================
 // Path Prefix Types: Separator
 // ===========================================================================
@@ -28,6 +41,21 @@ impl PartialEq<&[u8]> for Separator {
 }
 
 mk_reverse_equal!(Separator, &[u8]);
+
+// ===========================================================================
+// Path Prefix Types: Part
+// ===========================================================================
+
+#[derive(Debug)]
+pub struct Part;
+
+impl PartialEq<&[u8]> for Part {
+    fn eq(&self, other: &&[u8]) -> bool {
+        return !other.iter().any(|b| INVALID_CHAR.contains(b));
+    }
+}
+
+mk_reverse_equal!(Part, &[u8]);
 
 // ===========================================================================
 // Tests
@@ -62,6 +90,33 @@ mod test {
             }
         }
 
+    }
+
+    mod part {
+        use crate::unix::path_type::Part;
+
+        use proptest::{
+            prop_assert, prop_assert_ne, proptest, proptest_helper,
+        };
+
+        #[test]
+        fn self_equal() {
+            assert_eq!(Part, Part);
+        }
+
+        proptest! {
+            #[test]
+            fn valid_value(s in r#"[^/\x00]*"#) {
+                let arr: Vec<u8> = s.bytes().map(|c| c as u8).collect();
+                assert_eq!(Part, &arr[..]);
+            }
+
+            #[test]
+            fn invalid_value(s in r#"(.*[/\x00]+.*)+"#) {
+                let arr: Vec<u8> = s.bytes().map(|c| c as u8).collect();
+                prop_assert_ne!(Part, &arr[..]);
+            }
+        }
     }
 }
 

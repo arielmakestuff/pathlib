@@ -22,6 +22,7 @@ use std::str;
 // Local imports
 use self::path_type::Separator;
 use crate::common::error::ParseError;
+use crate::common::string::{as_osstr, as_str, is_char};
 
 // ===========================================================================
 // Error types
@@ -37,31 +38,6 @@ pub enum UnixErrorKind {
 // ===========================================================================
 
 pub type PathComponent<'path> = Result<Component<'path>, ParseError<'path>>;
-
-// The unsafe is safe since we're not modifying the slice at all, and we will
-// only be checking for ascii characters
-fn as_str<'path>(path: &'path [u8]) -> &'path str {
-    unsafe { str::from_utf8_unchecked(path) }
-}
-
-fn as_osstr<'path>(path: &'path [u8]) -> &'path OsStr {
-    OsStr::new(as_str(path))
-}
-
-fn is_char(path: &str, index: usize) -> bool {
-    let cur_is_boundary = path.is_char_boundary(index);
-    let ret = if index == path.len() - 1 {
-        cur_is_boundary && path.is_char_boundary(index - 1)
-    } else if index == 0 {
-        cur_is_boundary && path.is_char_boundary(index + 1)
-    } else {
-        cur_is_boundary
-            && path.is_char_boundary(index + 1)
-            && path.is_char_boundary(index - 1)
-    };
-
-    return ret;
-}
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Component<'path> {

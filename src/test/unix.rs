@@ -22,15 +22,7 @@ use crate::unix::{Component, PathComponent, PathIterator};
 
 mod public_export {
     use super::*;
-    use std::str;
-
-    fn as_str<'path>(path: &'path [u8]) -> &'path str {
-        unsafe { str::from_utf8_unchecked(path) }
-    }
-
-    fn as_osstr<'path>(path: &'path [u8]) -> &'path OsStr {
-        OsStr::new(as_str(path))
-    }
+    use crate::common::string::as_osstr;
 
     mod parseerror {
         use super::*;

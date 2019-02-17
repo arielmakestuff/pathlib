@@ -21,7 +21,7 @@ use std::str;
 // Third-party imports
 
 // Local imports
-use self::path_type::{Part, Separator};
+use self::path_type::Separator;
 
 // ===========================================================================
 // PathIterator
@@ -164,13 +164,19 @@ impl<'path> PathIterator<'path> {
 
         let mut ret = None;
         let path_str = as_str(self.path);
+        let mut has_invalid_char = false;
         for i in cur..end {
-            if Separator == self.path[i] && is_char(path_str, i) {
+            if !is_char(path_str, i) {
+                continue;
+            } else if self.path[i] == b'\x00' {
+                // The null character is not allowed in unix filenames
+                has_invalid_char = true;
+            } else if Separator == self.path[i] {
                 let part = &self.path[cur..i];
                 let comp = if part.len() == 0 {
                     Ok(Component::CurDir)
                 } else {
-                    self.to_comp(part)
+                    self.to_comp(part, has_invalid_char)
                 };
                 ret = Some(comp);
                 self.cur = i + 1;
@@ -186,7 +192,7 @@ impl<'path> PathIterator<'path> {
         match ret {
             Some(_) => ret,
             None => {
-                let comp = self.to_comp(&self.path[cur..end]);
+                let comp = self.to_comp(&self.path[cur..end], has_invalid_char);
                 self.cur = end;
                 Some(comp)
             }
@@ -196,9 +202,11 @@ impl<'path> PathIterator<'path> {
     fn to_comp(
         &mut self,
         part: &'path [u8],
+        found_err: bool,
     ) -> Result<Component<'path>, ParseError<'path>> {
         let comp_str = as_str(part);
-        if part != Part {
+
+        if found_err {
             self.invalid_char(comp_str)
         } else {
             let ret = match comp_str {

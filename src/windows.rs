@@ -28,6 +28,7 @@ use lazy_static::lazy_static;
 use self::match_prefix::match_prefix;
 use self::path_type::{Device, NonDevicePart};
 use crate::common::error::ParseError;
+use crate::common::string::{as_osstr, as_str};
 
 // ===========================================================================
 // Constants
@@ -95,16 +96,6 @@ pub enum WindowsErrorKind {
 // ===========================================================================
 
 pub type PathComponent<'path> = Result<Component<'path>, ParseError<'path>>;
-
-// The unsafe is safe since we're not modifying the slice at all, and we will
-// only be checking for ascii characters
-fn as_str<'path>(path: &'path [u8]) -> &'path str {
-    unsafe { str::from_utf8_unchecked(path) }
-}
-
-fn as_osstr<'path>(path: &'path [u8]) -> &'path OsStr {
-    OsStr::new(as_str(path))
-}
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Component<'path> {

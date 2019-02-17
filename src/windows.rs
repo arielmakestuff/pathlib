@@ -192,7 +192,12 @@ impl<'path> PathIterator<'path> {
         &mut self,
         verbatimdisk: bool,
     ) -> Option<PathComponent<'path>> {
-        if self.cur == self.path.len() {
+        let path_len = self.path.len();
+        let cur = self.cur;
+        if path_len == 0 {
+            self.parse_state = PathParseState::PathComponent;
+            return Some(Ok(Component::CurDir));
+        } else if cur == path_len {
             self.parse_state = PathParseState::Finish;
             return None;
         }

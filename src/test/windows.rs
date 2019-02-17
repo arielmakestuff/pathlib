@@ -372,6 +372,17 @@ mod pathiterator {
 
         assert_eq!(comp, expected);
     }
+
+    #[test]
+    fn empty_path<'path>() {
+        let path = b"";
+
+        let iter = PathIterator::new(path);
+        let comp: Vec<PathComponent> = iter.collect();
+        let expected: Vec<PathComponent<'path>> = vec![Ok(Component::CurDir)];
+
+        assert_eq!(comp, expected);
+    }
 }
 
 // ===========================================================================

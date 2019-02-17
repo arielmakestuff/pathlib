@@ -34,6 +34,18 @@ lazy_static! {
 #[derive(Debug)]
 pub struct Separator;
 
+impl PartialEq<u8> for Separator {
+    fn eq(&self, other: &u8) -> bool {
+        return *other == b'/';
+    }
+}
+
+impl PartialEq<Separator> for u8 {
+    fn eq(&self, other: &Separator) -> bool {
+        other == self
+    }
+}
+
 impl PartialEq<&[u8]> for Separator {
     fn eq(&self, other: &&[u8]) -> bool {
         return other == b"/";
@@ -79,6 +91,10 @@ mod test {
         fn equal_to_sep() {
             let s = b"/";
             assert_eq!(Separator, &s[..]);
+            assert_eq!(&s[..], Separator);
+
+            assert_eq!(Separator, s[0]);
+            assert_eq!(s[0], Separator);
         }
 
         proptest! {

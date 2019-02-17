@@ -1,5 +1,5 @@
-// src/lib.rs
-// Copyright (C) 2018 authors and contributors (see AUTHORS file)
+// src/unix.rs
+// Copyright (C) 2019 authors and contributors (see AUTHORS file)
 //
 // This file is released under the MIT License.
 
@@ -7,31 +7,17 @@
 // Modules
 // ===========================================================================
 
-pub mod path;
-pub mod unix;
-pub mod windows;
-
-#[cfg(test)]
-#[cfg_attr(tarpaulin, skip)]
-mod test;
+mod path_type;
 
 // ===========================================================================
-// Externs
+// Imports
 // ===========================================================================
 
-// Stdlib externs
+// Stdlib imports
 
-// Third-party externs
-#[macro_use]
-extern crate derive_more;
+// Third-party imports
 
-// Local externs
-
-// ===========================================================================
-// Re-exports
-// ===========================================================================
-
-pub use crate::path::Path;
+// Local imports
 
 // ===========================================================================
 //

@@ -8,14 +8,14 @@
 // ===========================================================================
 
 // Stdlib imports
-use std::error::Error;
+pub use std::error::Error;
 use std::ffi::OsStr;
 
 // Third-party imports
 
 // Local imports
-use crate::unix::UnixErrorKind;
-use crate::windows::WindowsErrorKind;
+pub use crate::unix::UnixErrorKind;
+pub use crate::windows::WindowsErrorKind;
 
 // ===========================================================================
 // Error types

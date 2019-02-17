@@ -8,12 +8,13 @@
 // ===========================================================================
 
 // Stdlib imports
+use crate::common::error::*;
 use std::ffi::OsStr;
 
 // Third-party imports
 
 // Local imports
-use crate::unix::{Component, ParseErrorKind, PathComponent, PathIterator};
+use crate::unix::{Component, PathComponent, PathIterator};
 
 // ===========================================================================
 // Tests
@@ -33,13 +34,11 @@ mod public_export {
 
     mod parseerror {
         use super::*;
-        use crate::unix::{test::NewParseError, ParseError};
-        use std::error::Error;
 
         #[test]
         fn source_always_none() {
             let err = ParseError::new(
-                ParseErrorKind::InvalidCharacter,
+                UnixErrorKind::InvalidCharacter.into(),
                 OsStr::new("hello"),
                 as_osstr(b"/hello/world"),
                 1,
@@ -53,7 +52,7 @@ mod public_export {
         #[test]
         fn kind_value() {
             let err = ParseError::new(
-                ParseErrorKind::InvalidCharacter,
+                UnixErrorKind::InvalidCharacter.into(),
                 OsStr::new("hello"),
                 as_osstr(b"/hello/world"),
                 1,
@@ -61,7 +60,7 @@ mod public_export {
                 String::from("message"),
             );
 
-            assert_eq!(err.kind(), ParseErrorKind::InvalidCharacter);
+            assert_eq!(err.kind(), UnixErrorKind::InvalidCharacter.into());
         }
     }
 
@@ -141,7 +140,8 @@ mod pathiterator {
         let result = match &comp[1] {
             Ok(_) => false,
             Err(e) => match e.kind() {
-                ParseErrorKind::InvalidCharacter => true,
+                ParseErrorKind::Unix(UnixErrorKind::InvalidCharacter) => true,
+                _ => false,
             },
         };
 

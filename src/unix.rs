@@ -14,7 +14,6 @@ mod path_type;
 // ===========================================================================
 
 // Stdlib imports
-use std::error::Error;
 use std::ffi::OsStr;
 use std::str;
 
@@ -22,52 +21,22 @@ use std::str;
 
 // Local imports
 use self::path_type::Separator;
+use crate::common::error::ParseError;
 
 // ===========================================================================
-// PathIterator
+// Error types
 // ===========================================================================
-
-pub type PathComponent<'path> = Result<Component<'path>, ParseError<'path>>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UnixErrorKind {
     InvalidCharacter,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ParseErrorKind {
-    InvalidCharacter,
-}
+// ===========================================================================
+// PathIterator
+// ===========================================================================
 
-#[derive(Debug, Display, PartialEq, Eq)]
-#[display(
-    fmt = "{:?}: unable to parse component {:?} range {}..{}: {}",
-    path,
-    component,
-    start,
-    end,
-    msg
-)]
-pub struct ParseError<'path> {
-    _kind: ParseErrorKind,
-    component: &'path OsStr,
-    path: &'path OsStr,
-    start: usize,
-    end: usize,
-    msg: String,
-}
-
-impl<'path> ParseError<'path> {
-    pub fn kind(&self) -> ParseErrorKind {
-        self._kind
-    }
-}
-
-impl<'path> Error for ParseError<'path> {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        None
-    }
-}
+pub type PathComponent<'path> = Result<Component<'path>, ParseError<'path>>;
 
 // The unsafe is safe since we're not modifying the slice at all, and we will
 // only be checking for ascii characters
@@ -231,14 +200,14 @@ impl<'path> PathIterator<'path> {
         self.parse_state = PathParseState::Finish;
 
         let msg = String::from("path component contains an invalid character");
-        let err = ParseError {
-            _kind: ParseErrorKind::InvalidCharacter,
-            component: OsStr::new(part),
-            path: as_osstr(self.path),
-            start: self.cur,
-            end: self.cur + part.len(),
-            msg: msg,
-        };
+        let err = ParseError::new(
+            UnixErrorKind::InvalidCharacter.into(),
+            OsStr::new(part),
+            as_osstr(self.path),
+            self.cur,
+            self.cur + part.len(),
+            msg,
+        );
 
         Err(err)
     }
@@ -256,38 +225,6 @@ impl<'path> Iterator for PathIterator<'path> {
             PathParseState::Finish => None,
         }
     }
-}
-
-// ===========================================================================
-// For tests
-// ===========================================================================
-
-#[cfg(test)]
-pub mod test {
-    use super::{ParseError, ParseErrorKind};
-    use std::ffi::OsStr;
-
-    pub trait NewParseError<'path> {
-        fn new(
-            kind: ParseErrorKind,
-            component: &'path OsStr,
-            path: &'path OsStr,
-            start: usize,
-            end: usize,
-            msg: String,
-        ) -> ParseError<'path> {
-            ParseError {
-                _kind: kind,
-                component,
-                path,
-                start,
-                end,
-                msg,
-            }
-        }
-    }
-
-    impl<'path> NewParseError<'path> for ParseError<'path> {}
 }
 
 // ===========================================================================

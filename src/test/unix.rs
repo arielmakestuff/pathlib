@@ -14,7 +14,7 @@ use std::ffi::OsStr;
 // Third-party imports
 
 // Local imports
-use crate::unix::{Component, PathComponent, PathIterator};
+use crate::unix::{Component, Iter, PathComponent};
 
 // ===========================================================================
 // Tests
@@ -97,14 +97,14 @@ mod public_export {
     }
 }
 
-mod pathiterator {
+mod iter {
     use super::*;
 
     #[test]
     fn prefix_noroot<'path>() {
         let path = b"hello";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 1);
 
@@ -118,7 +118,7 @@ mod pathiterator {
     fn invalid_char<'path>() {
         let path = b"/hello\x00/world";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
 
         assert_eq!(comp.len(), 2);
@@ -144,7 +144,7 @@ mod pathiterator {
     fn relative_path<'path>() {
         let path = b"hello/world";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 2);
 
@@ -160,7 +160,7 @@ mod pathiterator {
     fn double_path_separator<'path>() {
         let path = br"hello//world";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
 
@@ -177,7 +177,7 @@ mod pathiterator {
     fn curdir<'path>() {
         let path = br"hello/world/./what/now";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 5);
 
@@ -196,7 +196,7 @@ mod pathiterator {
     fn parentdir<'path>() {
         let path = br"hello/world/../what/now";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 5);
 
@@ -215,7 +215,7 @@ mod pathiterator {
     fn curdir_at_start<'path>() {
         let path = br"./hello/world";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
 
@@ -232,7 +232,7 @@ mod pathiterator {
     fn parentdir_at_start<'path>() {
         let path = br"../hello/world/";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
 
@@ -249,7 +249,7 @@ mod pathiterator {
     fn absolute_path<'path>() {
         let path = b"/hello/world/what/now/brown/cow";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 7);
 
@@ -270,7 +270,7 @@ mod pathiterator {
     fn empty_path<'path>() {
         let path = b"";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         let expected: Vec<PathComponent<'path>> = vec![Ok(Component::CurDir)];
 
@@ -282,7 +282,7 @@ mod pathiterator {
         let s = "/multibyte/Löwe 老虎 Léopard";
         let path = s.as_bytes();
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         let expected: Vec<PathComponent<'path>> = vec![
             Ok(Component::RootDir),

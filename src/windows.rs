@@ -95,7 +95,7 @@ pub enum WindowsErrorKind {
 }
 
 // ===========================================================================
-// PathIterator
+// Iter
 // ===========================================================================
 
 pub type PathComponent<'path> = Result<Component<'path>, ParseError<'path>>;
@@ -157,15 +157,15 @@ enum PathParseState {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct PathIterator<'path> {
+pub struct Iter<'path> {
     path: &'path [u8],
     parse_state: PathParseState,
     cur: usize,
 }
 
-impl<'path> PathIterator<'path> {
-    pub fn new(path: &[u8]) -> PathIterator {
-        PathIterator {
+impl<'path> Iter<'path> {
+    pub fn new(path: &[u8]) -> Iter {
+        Iter {
             path: path,
             parse_state: PathParseState::Start,
             cur: 0,
@@ -326,7 +326,7 @@ impl<'path> PathIterator<'path> {
     }
 }
 
-impl<'path> Iterator for PathIterator<'path> {
+impl<'path> Iterator for Iter<'path> {
     type Item = PathComponent<'path>;
 
     fn next(&mut self) -> Option<PathComponent<'path>> {
@@ -343,8 +343,8 @@ impl<'path> Iterator for PathIterator<'path> {
     }
 }
 
-// Implement PathData and AsPath traits for PathIterator
-pathiter_trait_impl!(PathIterator, 'path);
+// Implement PathData and AsPath traits for Iter
+pathiter_trait_impl!(Iter, 'path);
 
 // ===========================================================================
 //

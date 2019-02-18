@@ -15,7 +15,7 @@ use std::path::Prefix;
 
 // Local imports
 use crate::common::error::*;
-use crate::windows::{Component, PathComponent, PathIterator, PrefixComponent};
+use crate::windows::{Component, Iter, PathComponent, PrefixComponent};
 
 // ===========================================================================
 // Tests
@@ -109,14 +109,14 @@ mod public_export {
     }
 }
 
-mod pathiterator {
+mod iter {
     use super::*;
 
     #[test]
     fn verbatim_disk<'path>() {
         let path = br"\\?\C:\hello";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
 
@@ -136,7 +136,7 @@ mod pathiterator {
     fn prefix_noroot<'path>() {
         let path = br"C:";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 1);
 
@@ -151,7 +151,7 @@ mod pathiterator {
     fn invalid_char<'path>() {
         let path = br"C:\hello.";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
 
@@ -183,7 +183,7 @@ mod pathiterator {
     fn verbatim_path<'path>() {
         let path = br"\\?\hello\world";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
 
@@ -211,7 +211,7 @@ mod pathiterator {
         // WHEN
         // --------------------
         // iterating over the path
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
 
         // --------------------
@@ -252,7 +252,7 @@ mod pathiterator {
     fn relative_path<'path>() {
         let path = br"hello\world";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 2);
 
@@ -268,7 +268,7 @@ mod pathiterator {
     fn double_path_separator<'path>() {
         let path = br"hello\\world";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
 
@@ -285,7 +285,7 @@ mod pathiterator {
     fn curdir<'path>() {
         let path = br"hello\world\.\what\now";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 5);
 
@@ -304,7 +304,7 @@ mod pathiterator {
     fn parentdir<'path>() {
         let path = br"hello\world\..\what\now";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 5);
 
@@ -323,7 +323,7 @@ mod pathiterator {
     fn curdir_at_start<'path>() {
         let path = br".\hello\world";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
 
@@ -340,7 +340,7 @@ mod pathiterator {
     fn parentdir_at_start<'path>() {
         let path = br"..\hello\world\";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
 
@@ -357,7 +357,7 @@ mod pathiterator {
     fn mixed_separator<'path>() {
         let path = br"hello\world/what\now/brown/cow";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 6);
 
@@ -377,7 +377,7 @@ mod pathiterator {
     fn empty_path<'path>() {
         let path = b"";
 
-        let iter = PathIterator::new(path);
+        let iter = Iter::new(path);
         let comp: Vec<PathComponent> = iter.collect();
         let expected: Vec<PathComponent<'path>> = vec![Ok(Component::CurDir)];
 

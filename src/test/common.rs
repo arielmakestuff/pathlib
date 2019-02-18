@@ -74,7 +74,7 @@ impl<'path> PathIterBuilder for TestPathIterBuilder {
 
 impl<'path> PathIterBuilder for UnixPathIterBuilder {
     fn build(&self, path: &'static [u8], index: usize) -> Box<dyn AsRef<Path>> {
-        let mut pathiter = unix::PathIterator::new(path);
+        let mut pathiter = unix::Iter::new(path);
 
         // make sure the iterator's internal index matches index
         let mut cur = 0;
@@ -92,7 +92,7 @@ impl<'path> PathIterBuilder for UnixPathIterBuilder {
 
 impl<'path> PathIterBuilder for WindowsPathIterBuilder {
     fn build(&self, path: &'static [u8], index: usize) -> Box<dyn AsRef<Path>> {
-        let mut pathiter = windows::PathIterator::new(path);
+        let mut pathiter = windows::Iter::new(path);
 
         // make sure the iterator's internal index matches index
         let mut cur = 0;
@@ -149,7 +149,7 @@ impl<'path> CompBuilder for WindowsCompBuilder {
 }
 
 // ===========================================================================
-// AsRef<Path> for PathIterator tests
+// AsRef<Path> for Iter tests
 // ===========================================================================
 
 // Make impl_pathiter_asref_path tests

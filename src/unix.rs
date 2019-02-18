@@ -23,6 +23,9 @@ use std::str;
 use self::path_type::Separator;
 use crate::common::error::ParseError;
 use crate::common::string::{as_osstr, as_str, is_char};
+use crate::common::{AsPath, PathData};
+use crate::path::Path;
+use crate::{component_asref_impl, pathiter_trait_impl};
 
 // ===========================================================================
 // Error types
@@ -48,7 +51,7 @@ pub enum Component<'path> {
 }
 
 impl<'path> Component<'path> {
-    pub fn as_os_str(self) -> &'path OsStr {
+    pub fn as_os_str(&self) -> &'path OsStr {
         match self {
             Component::RootDir => OsStr::new("/"),
             Component::CurDir => OsStr::new("."),
@@ -57,6 +60,9 @@ impl<'path> Component<'path> {
         }
     }
 }
+
+// Implement AsRef<OsStr> and AsRef<Path> for Component
+component_asref_impl!(Component, 'path);
 
 #[derive(Debug, Eq, PartialEq)]
 enum PathParseState {
@@ -202,6 +208,9 @@ impl<'path> Iterator for PathIterator<'path> {
         }
     }
 }
+
+// Implement PathData and AsPath traits for PathIterator
+pathiter_trait_impl!(PathIterator, 'path);
 
 // ===========================================================================
 //

@@ -29,6 +29,9 @@ use self::match_prefix::match_prefix;
 use self::path_type::{Device, NonDevicePart};
 use crate::common::error::ParseError;
 use crate::common::string::{as_osstr, as_str};
+use crate::common::{AsPath, PathData};
+use crate::path::Path;
+use crate::{component_asref_impl, pathiter_trait_impl};
 
 // ===========================================================================
 // Constants
@@ -107,7 +110,7 @@ pub enum Component<'path> {
 }
 
 impl<'path> Component<'path> {
-    pub fn as_os_str(self) -> &'path OsStr {
+    pub fn as_os_str(&self) -> &'path OsStr {
         match self {
             Component::Prefix(prefix_str) => prefix_str.as_os_str(),
             Component::RootDir(rootdir) => rootdir,
@@ -117,6 +120,9 @@ impl<'path> Component<'path> {
         }
     }
 }
+
+// Implement AsRef<OsStr> and AsRef<Path> for Component
+component_asref_impl!(Component, 'path);
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct PrefixComponent<'path> {
@@ -336,6 +342,9 @@ impl<'path> Iterator for PathIterator<'path> {
         }
     }
 }
+
+// Implement PathData and AsPath traits for PathIterator
+pathiter_trait_impl!(PathIterator, 'path);
 
 // ===========================================================================
 //

@@ -8,7 +8,8 @@
 // ===========================================================================
 
 // Stdlib imports
-use std::path::{Components, Path as StdPath};
+use std::ffi::OsStr;
+use std::path::Path as StdPath;
 
 // Third-party imports
 
@@ -18,31 +19,45 @@ use std::path::{Components, Path as StdPath};
 // Path
 // ===========================================================================
 
-pub struct Path<'path>(&'path StdPath);
-
-impl<'path> Path<'path> {
-    pub fn new<P: AsRef<StdPath>>(p: &'path P) -> Path {
-        Path(p.as_ref())
-    }
+#[derive(Debug, PartialEq, Eq)]
+pub struct Path {
+    inner: OsStr,
 }
 
-impl<'path> AsRef<StdPath> for Path<'path> {
-    fn as_ref(&self) -> &StdPath {
-        self.0
+impl Path {
+    pub fn new<P: AsRef<OsStr> + ?Sized>(path: &P) -> &Path {
+        unsafe { &*(path.as_ref() as *const OsStr as *const Path) }
+    }
+
+    pub fn as_os_str(&self) -> &OsStr {
+        &self.inner
     }
 }
 
 // ===========================================================================
-// Attr trait
+// AsRef implementations
 // ===========================================================================
 
-pub trait Attr: AsRef<StdPath> {
-    fn components(&self) -> Components {
-        self.as_ref().components()
+impl AsRef<OsStr> for Path {
+    fn as_ref(&self) -> &OsStr {
+        self.as_os_str()
     }
 }
 
-impl<'path> Attr for Path<'path> {}
+macro_rules! path_asref_impl {
+    ($dest:ident, $base:ident) => {
+        impl AsRef<$dest> for $base {
+            fn as_ref(&self) -> &$dest {
+                $dest::new(self)
+            }
+        }
+    };
+}
+
+path_asref_impl!(Path, Path);
+path_asref_impl!(Path, OsStr);
+path_asref_impl!(Path, StdPath);
+path_asref_impl!(StdPath, Path);
 
 // ===========================================================================
 //

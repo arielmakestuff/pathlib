@@ -19,6 +19,8 @@ use std::path::Path as StdPath;
 // Path
 // ===========================================================================
 
+pub trait ComponentIterator: Iterator {}
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct Path {
     inner: OsStr,
@@ -32,6 +34,12 @@ impl Path {
     pub fn as_os_str(&self) -> &OsStr {
         &self.inner
     }
+
+pub trait MemoryPath<'path, I>
+where
+    I: ComponentIterator,
+{
+    fn iter(&'path self) -> I;
 }
 
 // ===========================================================================
@@ -43,6 +51,7 @@ impl AsRef<OsStr> for Path {
         self.as_os_str()
     }
 }
+
 
 macro_rules! path_asref_impl {
     ($dest:ident, $base:ident) => {
@@ -58,6 +67,17 @@ path_asref_impl!(Path, Path);
 path_asref_impl!(Path, OsStr);
 path_asref_impl!(Path, StdPath);
 path_asref_impl!(StdPath, Path);
+
+#[macro_export]
+macro_rules! impl_memorypath {
+    ($type:ty, $iter:ty) => {
+        impl<'path> MemoryPath<'path, $iter> for $type {
+            fn iter(&'path self) -> $iter {
+                Iter::new(self.as_bytes())
+            }
+        }
+    };
+}
 
 // ===========================================================================
 //

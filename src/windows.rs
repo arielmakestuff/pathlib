@@ -160,13 +160,28 @@ enum PathParseState {
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Iter<'path> {
+    #[cfg(unix)]
     path: &'path [u8],
+
+    #[cfg(windows)]
+    path: Vec<u8>,
+
     parse_state: PathParseState,
     cur: usize,
 }
 
 impl<'path> Iter<'path> {
+    #[cfg(unix)]
     pub fn new(path: &[u8]) -> Iter {
+        Iter {
+            path: path,
+            parse_state: PathParseState::Start,
+            cur: 0,
+        }
+    }
+
+    #[cfg(windows)]
+    pub fn new(path: Vec<u8>) -> Iter {
         Iter {
             path: path,
             parse_state: PathParseState::Start,
@@ -177,7 +192,7 @@ impl<'path> Iter<'path> {
     fn parse_prefix(&mut self) -> Option<PathComponent<'path>> {
         let mut verbatimdisk = false;
         let mut ret = None;
-        if let Some((end, prefix)) = match_prefix(self.path) {
+        if let Some((end, prefix)) = match_prefix(self.path.as_ref()) {
             if let Prefix::VerbatimDisk(_) = prefix {
                 verbatimdisk = true;
             }
@@ -318,7 +333,7 @@ impl<'path> Iter<'path> {
         let err = ParseError::new(
             kind.into(),
             OsStr::new(part),
-            as_osstr(self.path),
+            as_osstr(self.path.as_ref()),
             self.cur,
             self.cur + part.len(),
             msg,

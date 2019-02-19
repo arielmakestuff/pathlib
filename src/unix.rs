@@ -76,13 +76,28 @@ enum PathParseState {
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Iter<'path> {
+    #[cfg(unix)]
     path: &'path [u8],
+
+    #[cfg(windows)]
+    path: Vec<u8>,
+
     parse_state: PathParseState,
     cur: usize,
 }
 
 impl<'path> Iter<'path> {
+    #[cfg(unix)]
     pub fn new(path: &[u8]) -> Iter {
+        Iter {
+            path: path,
+            parse_state: PathParseState::Start,
+            cur: 0,
+        }
+    }
+
+    #[cfg(windows)]
+    pub fn new(path: Vec<u8>) -> Iter {
         Iter {
             path: path,
             parse_state: PathParseState::Start,
@@ -99,7 +114,7 @@ impl<'path> Iter<'path> {
 
         self.parse_state = PathParseState::Root;
 
-        let path_str = as_str(self.path);
+        let path_str = as_str(self.path.as_ref());
 
         // Check for root
         if Separator == self.path[self.cur] && is_char(path_str, self.cur) {
@@ -121,7 +136,7 @@ impl<'path> Iter<'path> {
         }
 
         let mut ret = None;
-        let path_str = as_str(self.path);
+        let path_str = as_str(self.path.as_ref());
         let mut has_invalid_char = false;
         for i in cur..end {
             if !is_char(path_str, i) {

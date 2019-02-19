@@ -26,8 +26,8 @@ use self::path_type::Separator;
 use crate::common::error::ParseError;
 use crate::common::string::{as_osstr, as_str, is_char};
 use crate::common::{AsPath, PathData};
-use crate::path::Path;
-use crate::{component_asref_impl, pathiter_trait_impl};
+use crate::path::{ComponentIterator, MemoryPath, Path, PathBuf};
+use crate::{component_asref_impl, impl_memorypath, pathiter_trait_impl};
 
 // ===========================================================================
 // Error types
@@ -85,6 +85,8 @@ pub struct Iter<'path> {
     parse_state: PathParseState,
     cur: usize,
 }
+
+impl<'path> ComponentIterator for Iter<'path> {}
 
 impl<'path> Iter<'path> {
     #[cfg(unix)]
@@ -228,6 +230,20 @@ impl<'path> Iterator for Iter<'path> {
 
 // Implement PathData and AsPath traits for Iter
 pathiter_trait_impl!(Iter, 'path);
+
+// Implement MemoryPath for Path
+impl_memorypath!(Path, Iter<'path>);
+
+// Implement MemoryPath for PathBuf
+impl_memorypath!(PathBuf, Iter<'path>);
+
+pub trait UnixMemoryPath<'path>: MemoryPath<'path, Iter<'path>> {}
+
+pub trait UnixMemoryPathBuf<'path>: MemoryPath<'path, Iter<'path>> {}
+
+impl<'path> UnixMemoryPath<'path> for Path {}
+
+impl<'path> UnixMemoryPathBuf<'path> for PathBuf {}
 
 // ===========================================================================
 //

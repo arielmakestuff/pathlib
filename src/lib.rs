@@ -14,6 +14,7 @@ mod common;
 #[cfg_attr(tarpaulin, skip)]
 mod test;
 
+#[macro_use]
 pub mod path;
 pub mod unix;
 pub mod windows;

@@ -1,24 +1,7 @@
-// src/lib.rs
-// Copyright (C) 2018 authors and contributors (see AUTHORS file)
+// src/prelude.rs
+// Copyright (C) 2019 authors and contributors (see AUTHORS file)
 //
 // This file is released under the MIT License.
-
-// ===========================================================================
-// Modules
-// ===========================================================================
-
-#[macro_use]
-mod common;
-
-#[cfg(test)]
-#[cfg_attr(tarpaulin, skip)]
-mod test;
-
-#[macro_use]
-pub mod path;
-pub mod prelude;
-pub mod unix;
-pub mod windows;
 
 // ===========================================================================
 // Externs
@@ -27,8 +10,6 @@ pub mod windows;
 // Stdlib externs
 
 // Third-party externs
-#[macro_use]
-extern crate derive_more;
 
 // Local externs
 
@@ -36,8 +17,19 @@ extern crate derive_more;
 // Re-exports
 // ===========================================================================
 
-pub use crate::common::AsPath;
+// Local imports
 pub use crate::path::{Path, PathBuf};
+
+#[cfg(unix)]
+pub use crate::unix::{
+    Component as UnixComponent, UnixMemoryPath, UnixMemoryPathBuf,
+};
+
+#[cfg(windows)]
+pub use crate::windows::{
+    Component as WindowsComponent, Prefix, WindowsMemoryPath,
+    WindowsMemoryPathBuf,
+};
 
 // ===========================================================================
 //

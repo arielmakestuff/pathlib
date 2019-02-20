@@ -33,7 +33,7 @@ use crate::common::error::ParseError;
 use crate::common::string::{as_osstr, as_str};
 use crate::common::{AsPath, PathData};
 
-use crate::path::{ComponentIterator, Path, PathBuf};
+use crate::path::{Path, PathBuf};
 use crate::{component_asref_impl, impl_memory_path, pathiter_trait_impl};
 
 // ===========================================================================
@@ -170,8 +170,6 @@ pub struct Iter<'path> {
     parse_state: PathParseState,
     cur: usize,
 }
-
-impl<'path> ComponentIterator for Iter<'path> {}
 
 impl<'path> Iter<'path> {
     #[cfg(unix)]

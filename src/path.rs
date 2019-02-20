@@ -19,19 +19,6 @@ pub use crate::unix::path::{Path, PathBuf};
 pub use crate::windows::path::{Path, PathBuf};
 
 // ===========================================================================
-// Traits
-// ===========================================================================
-
-pub trait ComponentIterator: Iterator {}
-
-pub trait MemoryPath<'path, I>
-where
-    I: ComponentIterator,
-{
-    fn iter(&'path self) -> I;
-}
-
-// ===========================================================================
 // Macros
 // ===========================================================================
 
@@ -41,17 +28,6 @@ macro_rules! path_asref_impl {
         impl AsRef<$dest> for $base {
             fn as_ref(&self) -> &$dest {
                 $dest::new(self)
-            }
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! impl_memorypath {
-    ($type:ty, $iter:ty) => {
-        impl<'path> MemoryPath<'path, $iter> for $type {
-            fn iter(&'path self) -> $iter {
-                Iter::new(self.as_bytes())
             }
         }
     };

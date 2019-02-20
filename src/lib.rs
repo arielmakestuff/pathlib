@@ -36,7 +36,7 @@ extern crate derive_more;
 // ===========================================================================
 
 pub use crate::common::AsPath;
-pub use crate::path::Path;
+pub use crate::path::{Path, PathBuf};
 
 // ===========================================================================
 //

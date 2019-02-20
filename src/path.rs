@@ -58,6 +58,21 @@ macro_rules! impl_memorypath {
 }
 
 #[macro_export]
+macro_rules! impl_memory_path {
+    ($name:ident, $type:ty) => {
+        pub trait $name<'path> {
+            fn iter(&'path self) -> Iter<'path>;
+        }
+
+        impl<'path> $name<'path> for $type {
+            fn iter(&'path self) -> Iter<'path> {
+                Iter::new(self.as_bytes())
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! path_struct {
     () => {
         #[derive(Debug, PartialEq, Eq)]

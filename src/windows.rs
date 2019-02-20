@@ -32,8 +32,9 @@ use self::path_type::{Device, NonDevicePart};
 use crate::common::error::ParseError;
 use crate::common::string::{as_osstr, as_str};
 use crate::common::{AsPath, PathData};
-use crate::path::Path;
-use crate::{component_asref_impl, pathiter_trait_impl};
+
+use crate::path::{ComponentIterator, Path, PathBuf};
+use crate::{component_asref_impl, impl_memory_path, pathiter_trait_impl};
 
 // ===========================================================================
 // Constants
@@ -169,6 +170,8 @@ pub struct Iter<'path> {
     parse_state: PathParseState,
     cur: usize,
 }
+
+impl<'path> ComponentIterator for Iter<'path> {}
 
 impl<'path> Iter<'path> {
     #[cfg(unix)]
@@ -362,6 +365,10 @@ impl<'path> Iterator for Iter<'path> {
 
 // Implement PathData and AsPath traits for Iter
 pathiter_trait_impl!(Iter, 'path);
+
+impl_memory_path!(WindowsMemoryPath, Path);
+
+impl_memory_path!(WindowsMemoryPathBuf, PathBuf);
 
 // ===========================================================================
 //

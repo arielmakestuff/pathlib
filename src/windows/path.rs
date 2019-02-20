@@ -10,7 +10,6 @@
 // Stdlib imports
 use std::ffi::OsStr;
 use std::path::Path as StdPath;
-// use std::os::windows::ffi::OsStrExt;
 
 // Third-party imports
 
@@ -38,21 +37,6 @@ impl Path {
         // s.bytes().collect()
     }
 }
-
-// ===========================================================================
-// Path AsRef implementations
-// ===========================================================================
-
-// impl AsRef<OsStr> for Path {
-//     fn as_ref(&self) -> &OsStr {
-//         self.as_os_str()
-//     }
-// }
-
-// path_asref_impl!(Path, Path);
-// path_asref_impl!(Path, OsStr);
-// path_asref_impl!(Path, StdPath);
-// path_asref_impl!(StdPath, Path);
 
 // ===========================================================================
 // PathBuf

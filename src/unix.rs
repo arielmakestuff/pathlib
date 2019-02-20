@@ -27,7 +27,7 @@ use crate::common::error::ParseError;
 use crate::common::string::{as_osstr, as_str, is_char};
 use crate::common::{AsPath, PathData};
 use crate::path::{Path, PathBuf};
-use crate::{component_asref_impl, impl_memory_path, pathiter_trait_impl};
+use crate::{component_asref_impl, pathiter_trait_impl};
 
 // ===========================================================================
 // Error types
@@ -229,9 +229,11 @@ impl<'path> Iterator for Iter<'path> {
 // Implement PathData and AsPath traits for Iter
 pathiter_trait_impl!(Iter, 'path);
 
-impl_memory_path!(UnixMemoryPath, Path);
+// Defines and implements UnixMemoryPath
+memory_path!(UnixMemoryPath, Path);
 
-impl_memory_path!(UnixMemoryPathBuf, PathBuf);
+// Implements UnixMemoryPath and defines and implements UnixMemoryPathBuf
+memory_pathbuf!(UnixMemoryPathBuf, UnixMemoryPath, PathBuf);
 
 // ===========================================================================
 //

@@ -33,24 +33,52 @@ macro_rules! path_asref_impl {
     };
 }
 
-#[macro_export]
-macro_rules! impl_memory_path {
+// memory path interface
+macro_rules! trait_memory_path {
     ($name:ident, $type:ty) => {
         pub trait $name<'path> {
             fn iter(&'path self) -> Iter<'path>;
         }
+    };
+}
 
+macro_rules! impl_memory_path {
+    ($name:ident, $type:ty) => {
         impl<'path> $name<'path> for $type {
             fn iter(&'path self) -> Iter<'path> {
                 Iter::new(self.as_bytes())
             }
         }
+    };
+}
 
-        impl<'path> $name<'path> for &$type {
-            fn iter(&'path self) -> Iter<'path> {
-                Iter::new(self.as_bytes())
-            }
-        }
+#[macro_export]
+macro_rules! memory_path {
+    ($name:ident, $type:ty) => {
+        trait_memory_path!($name, $type);
+        impl_memory_path!($name, $type);
+    };
+}
+
+// memory pathbuf interface
+macro_rules! trait_memory_pathbuf {
+    ($name:ident, $mempath_name:ident, $type:ty) => {
+        pub trait $name<'path>: $mempath_name<'path> {}
+    };
+}
+
+macro_rules! impl_memory_pathbuf {
+    ($name:ident, $type:ty) => {
+        impl<'path> $name<'path> for $type {}
+    };
+}
+
+#[macro_export]
+macro_rules! memory_pathbuf {
+    ($name:ident, $mempath_name:ident, $type:ty) => {
+        impl_memory_path!($mempath_name, $type);
+        trait_memory_pathbuf!($name, $mempath_name, $type);
+        impl_memory_pathbuf!($name, $type);
     };
 }
 

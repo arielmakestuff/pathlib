@@ -7,6 +7,7 @@
 // Modules
 // ===========================================================================
 
+#[cfg(windows)]
 pub mod path;
 
 mod match_prefix;
@@ -33,7 +34,7 @@ use crate::common::string::{as_osstr, as_str};
 use crate::common::{AsPath, PathData};
 
 use crate::path::{Path, PathBuf};
-use crate::{component_asref_impl, impl_memory_path, pathiter_trait_impl};
+use crate::{component_asref_impl, pathiter_trait_impl};
 
 // ===========================================================================
 // Re-exports
@@ -369,9 +370,11 @@ impl<'path> Iterator for Iter<'path> {
 // Implement PathData and AsPath traits for Iter
 pathiter_trait_impl!(Iter, 'path);
 
-impl_memory_path!(WindowsMemoryPath, Path);
+// Defines and implements WindowsMemoryPath
+memory_path!(WindowsMemoryPath, Path);
 
-impl_memory_path!(WindowsMemoryPathBuf, PathBuf);
+// Implements WindowsMemoryPath and defines and implements WindowsMemoryPathBuf
+memory_pathbuf!(WindowsMemoryPathBuf, WindowsMemoryPath, PathBuf);
 
 // ===========================================================================
 //

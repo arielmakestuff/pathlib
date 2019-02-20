@@ -20,7 +20,6 @@ mod path_type;
 // use std::cmp::PartialEq;
 use std::collections::HashSet;
 use std::ffi::OsStr;
-use std::path::Prefix;
 use std::str;
 
 // Third-party imports
@@ -35,6 +34,12 @@ use crate::common::{AsPath, PathData};
 
 use crate::path::{Path, PathBuf};
 use crate::{component_asref_impl, impl_memory_path, pathiter_trait_impl};
+
+// ===========================================================================
+// Re-exports
+// ===========================================================================
+
+pub use std::path::Prefix;
 
 // ===========================================================================
 // Constants

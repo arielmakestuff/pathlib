@@ -45,6 +45,12 @@ macro_rules! impl_memory_path {
                 Iter::new(self.as_bytes())
             }
         }
+
+        impl<'path> $name<'path> for &$type {
+            fn iter(&'path self) -> Iter<'path> {
+                Iter::new(self.as_bytes())
+            }
+        }
     };
 }
 

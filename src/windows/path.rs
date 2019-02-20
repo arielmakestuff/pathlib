@@ -31,10 +31,9 @@ path_struct!();
 
 impl Path {
     pub fn as_bytes<'path>(&'path self) -> Vec<u8> {
-        unimplemented!()
-        // let result: vec<u16> = self.as_ref().encode_wide().collect();
-        // let s = string::from_utf16_lossy(&result[..]);
-        // s.bytes().collect()
+        let result: vec<u16> = self.as_ref().encode_wide().collect();
+        let s = string::from_utf16_lossy(&result[..]);
+        s.bytes().collect()
     }
 }
 
@@ -48,13 +47,12 @@ pub struct PathBuf {
 }
 
 impl PathBuf {
-    pub fn new<P: AsRef<OsStr> + ?Sized>(_path: &P) -> PathBuf {
-        unimplemented!()
-        // let result: Vec<u16> = path.as_ref().encode_wide().collect();
-        // let s = String::from_utf16_lossy(&result[..]);
-        // PathBuf {
-        //     inner: s.bytes().collect(),
-        // }
+    pub fn new<P: AsRef<OsStr> + ?Sized>(path: &P) -> PathBuf {
+        let result: Vec<u16> = path.as_ref().encode_wide().collect();
+        let s = String::from_utf16_lossy(&result[..]);
+        PathBuf {
+            inner: s.bytes().collect(),
+        }
     }
 
     pub fn as_bytes<'path>(&'path self) -> &'path [u8] {

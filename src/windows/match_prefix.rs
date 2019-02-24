@@ -66,7 +66,8 @@ fn match_doubleslash(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
     if next_two == path_type::DotSlash {
         match_devicens(path, end)
     } else if next_two == path_type::QuestionSlash {
-        let match_funcs: [fn(&[u8], usize) -> Option<(usize, Prefix)>; 3] =
+        type Method = fn(&[u8], usize) -> Option<(usize, Prefix)>;
+        let match_funcs: [Method; 3] =
             [match_verbatimunc, match_verbatimdisk, match_verbatim];
 
         for f in match_funcs.iter() {
@@ -85,9 +86,9 @@ fn match_doubleslash(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
 fn match_verbatim(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
     let mut end = path.len();
 
-    for i in first..end {
-        if SEPARATOR.contains(&path[i]) {
-            end = i;
+    for (i, c) in path[first..end].iter().enumerate() {
+        if SEPARATOR.contains(c) {
+            end = i + first;
             break;
         }
     }
@@ -122,9 +123,9 @@ fn match_unc(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
     let end = path.len();
 
     let mut sep_index: Vec<usize> = Vec::with_capacity(2);
-    for i in first..end {
-        if SEPARATOR.contains(&path[i]) {
-            sep_index.push(i);
+    for (i, c) in path[first..end].iter().enumerate() {
+        if SEPARATOR.contains(c) {
+            sep_index.push(i + first);
             if sep_index.len() == 2 {
                 break;
             }
@@ -182,14 +183,14 @@ fn match_devicens(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
     let mut end = path.len();
 
     // Get all bytes until first separator
-    for i in first..end {
-        if SEPARATOR.contains(&path[i]) {
-            end = i;
+    for (i, c) in path[first..end].iter().enumerate() {
+        if SEPARATOR.contains(c) {
+            end = i + first;
             break;
         }
     }
-    let part = &path[first..end];
 
+    let part = &path[first..end];
     if part == path_type::DeviceNamespace {
         let prefix =
             Prefix::DeviceNS(OsStr::new(unsafe { from_utf8_unchecked(part) }));

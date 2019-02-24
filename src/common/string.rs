@@ -21,11 +21,11 @@ use std::str;
 
 // The unsafe is safe since we're not modifying the slice at all, and we will
 // only be checking for ascii characters
-pub(crate) fn as_str<'path>(path: &'path [u8]) -> &'path str {
+pub(crate) fn as_str(path: &[u8]) -> &str {
     unsafe { str::from_utf8_unchecked(path) }
 }
 
-pub(crate) fn as_osstr<'path>(path: &'path [u8]) -> &'path OsStr {
+pub(crate) fn as_osstr(path: &[u8]) -> &OsStr {
     OsStr::new(as_str(path))
 }
 

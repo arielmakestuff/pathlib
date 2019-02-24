@@ -39,7 +39,7 @@ impl Path {
         Path::new(s)
     }
 
-    pub fn as_bytes<'path>(&'path self) -> &[u8] {
+    pub fn as_bytes(&self) -> &[u8] {
         self.inner.as_bytes()
     }
 }
@@ -60,15 +60,14 @@ impl AsRef<[u8]> for Path {
 // PathBuf
 // ===========================================================================
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct PathBuf {
     inner: OsString,
 }
 
 impl PathBuf {
     pub fn new() -> PathBuf {
-        let inner = OsString::new();
-        PathBuf { inner }
+        Default::default()
     }
 
     pub fn from_bytes<P>(p: &P) -> PathBuf

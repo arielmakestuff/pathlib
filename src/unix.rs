@@ -105,7 +105,7 @@ macro_rules! unix_iter_body {
                 let comp = if part_len == 0 {
                     Ok(Component::CurDir)
                 } else {
-                    self.to_comp(cur, i, has_invalid_char)
+                    self.build_comp(cur, i, has_invalid_char)
                 };
                 ret = Some(comp);
                 self.cur = i + 1;
@@ -121,14 +121,14 @@ macro_rules! unix_iter_body {
         match ret {
             Some(_) => ret,
             None => {
-                let comp = self.to_comp(cur, end, has_invalid_char);
+                let comp = self.build_comp(cur, end, has_invalid_char);
                 self.cur = end;
                 Some(comp)
             }
         }
     }
 
-    fn to_comp(
+    fn build_comp(
         &mut self,
         start: usize,
         end: usize,

@@ -127,7 +127,7 @@ impl<'path> Iter<'path> {
     fn parse_prefix(&mut self) -> Option<PathComponent<'path>> {
         let mut verbatimdisk = false;
         let mut ret = None;
-        if let Some((end, prefix)) = match_prefix(self.path.as_ref()) {
+        if let Some((end, prefix)) = match_prefix(self.path) {
             if let Prefix::VerbatimDisk(_) = prefix {
                 verbatimdisk = true;
             }
@@ -191,10 +191,10 @@ impl<'path> Iter<'path> {
             let cur_char = &self.path[i];
             if SEPARATOR.contains(cur_char) {
                 let part = &self.path[cur..i];
-                let comp = if part.len() == 0 {
+                let comp = if part.is_empty() {
                     Ok(Component::CurDir)
                 } else {
-                    self.to_comp(cur, i)
+                    self.build_comp(cur, i)
                 };
                 ret = Some(comp);
                 self.cur = i + 1;
@@ -210,14 +210,14 @@ impl<'path> Iter<'path> {
         match ret {
             Some(_) => ret,
             None => {
-                let comp = self.to_comp(cur, end);
+                let comp = self.build_comp(cur, end);
                 self.cur = end;
                 Some(comp)
             }
         }
     }
 
-    fn to_comp(
+    fn build_comp(
         &mut self,
         start: usize,
         end: usize,
@@ -274,7 +274,7 @@ impl<'path> Iter<'path> {
         let err = ParseError::new(
             kind.into(),
             OsString::from(part),
-            OsString::from(as_str(self.path.as_ref())),
+            OsString::from(as_str(self.path)),
             self.cur,
             self.cur + part.len(),
             msg,

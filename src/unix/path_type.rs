@@ -33,7 +33,12 @@ pub struct Separator;
 
 impl PartialEq<CodePoint> for Separator {
     fn eq(&self, other: &CodePoint) -> bool {
-        *other == b'/' as CodePoint
+        let sep = b'/';
+
+        #[cfg(windows)]
+        let sep = sep as CodePoint;
+
+        *other == sep
     }
 }
 
@@ -60,7 +65,12 @@ pub struct Null;
 
 impl PartialEq<CodePoint> for Null {
     fn eq(&self, other: &CodePoint) -> bool {
-        *other == b'\x00' as CodePoint
+        let null_char = b'\x00';
+
+        #[cfg(windows)]
+        let null_char = null_char as CodePoint;
+
+        *other == null_char
     }
 }
 

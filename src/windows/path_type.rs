@@ -34,24 +34,11 @@ use crate::mk_reverse_equal;
 // ===========================================================================
 
 lazy_static! {
-    static ref UNC_LETTERS: HashSet<u8> = {
-        let letters = "uncUNC";
-        let mut all_letters = HashSet::with_capacity(letters.len());
-        for l in letters.chars() {
-            all_letters.insert(l as u8);
-        }
-        all_letters
-    };
-    static ref UNC_WORD_BYTES: Vec<u8> =
-        { "UNC".as_bytes().iter().map(|&l| l as u8).collect() };
-    static ref INVALID_LAST_CHAR: HashSet<u8> = {
-        let chars = " .";
-        let mut all_chars = HashSet::with_capacity(chars.len());
-        for c in chars.chars() {
-            all_chars.insert(c as u8);
-        }
-        all_chars
-    };
+    static ref UNC_LETTERS: HashSet<u8> =
+        { b"uncUNC".iter().cloned().collect() };
+    static ref UNC_WORD_BYTES: Vec<u8> = { b"UNC".to_vec() };
+    static ref INVALID_LAST_CHAR: HashSet<u8> =
+        { b" .".iter().cloned().collect() };
 }
 
 // ===========================================================================
@@ -214,7 +201,7 @@ pub struct DeviceNamespace;
 
 impl PartialEq<&[u8]> for DeviceNamespace {
     fn eq(&self, other: &&[u8]) -> bool {
-        other.len() > 0 && other.iter().all(|c| !RESTRICTED_CHARS.contains(c))
+        !other.is_empty() && other.iter().all(|c| !RESTRICTED_CHARS.contains(c))
     }
 }
 
@@ -274,11 +261,7 @@ pub struct UNCRootPart;
 
 impl PartialEq<&[u8]> for UNCRootPart {
     fn eq(&self, other: &&[u8]) -> bool {
-        if other.len() == 4 && &other[..3] == UNCPart && other[3] == Separator {
-            true
-        } else {
-            false
-        }
+        other.len() == 4 && &other[..3] == UNCPart && other[3] == Separator
     }
 }
 
@@ -340,7 +323,7 @@ impl PartialEq<&[u8]> for ServerShare {
             if found > 2 || part != NonDevicePart {
                 return false;
             }
-            found = found + 1;
+            found += 1;
         }
 
         found == 2

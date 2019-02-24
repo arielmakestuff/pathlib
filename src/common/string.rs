@@ -29,21 +29,6 @@ pub(crate) fn as_osstr<'path>(path: &'path [u8]) -> &'path OsStr {
     OsStr::new(as_str(path))
 }
 
-pub(crate) fn is_char(path: &str, index: usize) -> bool {
-    let cur_is_boundary = path.is_char_boundary(index);
-    let ret = if index == path.len() - 1 {
-        cur_is_boundary && path.is_char_boundary(index - 1)
-    } else if index == 0 {
-        cur_is_boundary && path.is_char_boundary(index + 1)
-    } else {
-        cur_is_boundary
-            && path.is_char_boundary(index + 1)
-            && path.is_char_boundary(index - 1)
-    };
-
-    return ret;
-}
-
 // ===========================================================================
 //
 // ===========================================================================

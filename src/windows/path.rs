@@ -8,7 +8,8 @@
 // ===========================================================================
 
 // Stdlib imports
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
+use std::os::windows::ffi::{OsStrExt, OsStringExt};
 use std::path::Path as StdPath;
 
 // Third-party imports
@@ -24,16 +25,27 @@ use crate::{path_asref_impl, path_struct};
 // create path struct
 //
 // this macro invocation needs the following imports:
-// * std::ffi::osstr
+// * std::ffi::OsStr
 // * crate::path_asref_impl
-// * std::path::path as stdpath
+// * std::path::Path as StdPath
 path_struct!();
 
 impl Path {
-    pub fn as_bytes<'path>(&'path self) -> Vec<u8> {
-        let result: vec<u16> = self.as_ref().encode_wide().collect();
-        let s = string::from_utf16_lossy(&result[..]);
-        s.bytes().collect()
+    pub fn from_bytes<P>(p: P) -> PathBuf
+    where
+        P: AsRef<[u8]> + ?Sized,
+    {
+        Path::new(as_osstr(s.as_ref()))
+    }
+
+    pub fn to_utf16(&self) -> Vec<u16> {
+        self.as_os_str().encode_wide().collect()
+    }
+}
+
+impl From<&Path> for Vec<u16> {
+    fn from(p: &Path) -> Vec<u16> {
+        p.to_utf16()
     }
 }
 
@@ -41,26 +53,61 @@ impl Path {
 // PathBuf
 // ===========================================================================
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct PathBuf {
-    inner: Vec<u8>,
+    inner: OsString,
 }
 
 impl PathBuf {
-    pub fn new<P: AsRef<OsStr> + ?Sized>(path: &P) -> PathBuf {
-        let result: Vec<u16> = path.as_ref().encode_wide().collect();
-        let s = String::from_utf16_lossy(&result[..]);
-        PathBuf {
-            inner: s.bytes().collect(),
-        }
+    pub fn new() -> PathBuf {
+        let inner = OsString::new();
+        PathBuf { inner }
     }
 
-    pub fn as_bytes<'path>(&'path self) -> &'path [u8] {
-        &self.inner[..]
+    pub fn from_bytes<P>(p: P) -> PathBuf
+    where
+        P: AsRef<[u8]> + ?Sized,
+    {
+        let inner = as_osstr(s.as_ref()).to_os_string();
+        PathBuf { inner }
+    }
+
+    pub fn from_utf16<P>(p: P) -> PathBuf
+    where
+        P: AsRef<[u16]> + ?Sized,
+    {
+        let inner = OsString::from_wide(p.as_ref());
+        PathBuf { inner }
+    }
+
+    pub fn to_utf16(&self) -> Vec<u16> {
+        Path::from(self).to_utf16()
     }
 
     pub fn as_os_str(&self) -> &OsStr {
-        as_osstr(&self.inner[..])
+        self.inner.as_os_str()
+    }
+}
+
+impl<P> From<&P> for PathBuf
+where
+    P: AsRef<OsStr> + ?Sized,
+{
+    fn from(p: &P) -> PathBuf {
+        let inner = path.as_ref().to_os_string();
+        PathBuf { inner }
+    }
+}
+
+impl From<PathBuf> for Vec<u16> {
+    fn from(p: PathBuf) -> Vec<u16> {
+        p.to_utf16()
+    }
+}
+
+impl AsRef<Path> for PathBuf {
+    fn as_ref(&self) -> &Path {
+        Path::new(self)
     }
 }
 

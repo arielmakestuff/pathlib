@@ -4,16 +4,23 @@
 // This file is released under the MIT License.
 
 // ===========================================================================
+// Modules
+// ===========================================================================
+
+pub mod path;
+
+// ===========================================================================
 // Imports
 // ===========================================================================
 
 // Stdlib imports
 use crate::common::error::*;
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 
 // Third-party imports
 
 // Local imports
+use crate::path::Path;
 use crate::unix::{Component, Iter, PathComponent};
 
 // ===========================================================================
@@ -22,7 +29,7 @@ use crate::unix::{Component, Iter, PathComponent};
 
 mod public_export {
     use super::*;
-    use crate::common::string::as_osstr;
+    use crate::common::string::{as_osstr, as_str};
 
     mod parseerror {
         use super::*;
@@ -31,8 +38,8 @@ mod public_export {
         fn source_always_none() {
             let err = ParseError::new(
                 UnixErrorKind::InvalidCharacter.into(),
-                OsStr::new("hello"),
-                as_osstr(b"/hello/world"),
+                OsString::from("hello"),
+                OsString::from(as_str(b"/hello/world")),
                 1,
                 6,
                 String::from("message"),
@@ -45,8 +52,8 @@ mod public_export {
         fn kind_value() {
             let err = ParseError::new(
                 UnixErrorKind::InvalidCharacter.into(),
-                OsStr::new("hello"),
-                as_osstr(b"/hello/world"),
+                OsString::from("hello"),
+                OsString::from(as_str(b"/hello/world")),
                 1,
                 6,
                 String::from("message"),
@@ -94,6 +101,45 @@ mod public_export {
 
             assert_eq!(comp.as_os_str(), expected);
         }
+
+        #[test]
+        fn str_rootdir() {
+            let path = "/";
+            let expected = Component::RootDir;
+
+            let result: Component = path.into();
+            assert_eq!(result, expected);
+        }
+
+        #[test]
+        fn str_curdir() {
+            let path = ".";
+            let expected = Component::CurDir;
+
+            let result: Component = path.into();
+
+            assert_eq!(result, expected);
+        }
+
+        #[test]
+        fn str_parentdir() {
+            let path = "..";
+            let expected = Component::ParentDir;
+
+            let result: Component = path.into();
+
+            assert_eq!(result, expected);
+        }
+
+        #[test]
+        fn str_normal() {
+            let path = "hello";
+            let expected = Component::Normal(OsStr::new(&path[..]));
+
+            let result: Component = path.into();
+
+            assert_eq!(result, expected);
+        }
     }
 }
 
@@ -103,12 +149,7 @@ mod iter {
     #[test]
     fn prefix_noroot<'path>() {
         let path = b"hello";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 1);
@@ -122,12 +163,7 @@ mod iter {
     #[test]
     fn invalid_char<'path>() {
         let path = b"/hello\x00/world";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
 
@@ -153,12 +189,7 @@ mod iter {
     #[test]
     fn relative_path<'path>() {
         let path = b"hello/world";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 2);
@@ -174,12 +205,7 @@ mod iter {
     #[test]
     fn double_path_separator<'path>() {
         let path = br"hello//world";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
@@ -196,12 +222,7 @@ mod iter {
     #[test]
     fn curdir<'path>() {
         let path = br"hello/world/./what/now";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 5);
@@ -220,12 +241,7 @@ mod iter {
     #[test]
     fn parentdir<'path>() {
         let path = br"hello/world/../what/now";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 5);
@@ -244,12 +260,7 @@ mod iter {
     #[test]
     fn curdir_at_start<'path>() {
         let path = br"./hello/world";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
@@ -266,12 +277,7 @@ mod iter {
     #[test]
     fn parentdir_at_start<'path>() {
         let path = br"../hello/world/";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
@@ -288,12 +294,7 @@ mod iter {
     #[test]
     fn absolute_path<'path>() {
         let path = b"/hello/world/what/now/brown/cow";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 7);
@@ -314,12 +315,7 @@ mod iter {
     #[test]
     fn empty_path<'path>() {
         let path = b"";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         let expected: Vec<PathComponent<'path>> = vec![Ok(Component::CurDir)];
@@ -331,12 +327,7 @@ mod iter {
     fn multibyte_chars<'path>() {
         let s = "/multibyte/Löwe 老虎 Léopard";
         let path = s.as_bytes();
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         let expected: Vec<PathComponent<'path>> = vec![

@@ -8,13 +8,14 @@
 // ===========================================================================
 
 // Stdlib imports
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::path::Prefix;
 
 // Third-party imports
 
 // Local imports
 use crate::common::error::*;
+use crate::path::Path;
 use crate::windows::{Component, Iter, PathComponent, PrefixComponent};
 
 // ===========================================================================
@@ -32,8 +33,8 @@ mod public_export {
         fn source_always_none() {
             let err = ParseError::new(
                 WindowsErrorKind::RestrictedName.into(),
-                OsStr::new("hello"),
-                as_osstr(b"/hello/world"),
+                OsString::from("hello"),
+                OsString::from(as_str(b"/hello/world")),
                 1,
                 6,
                 String::from("message"),
@@ -115,12 +116,7 @@ mod iter {
     #[test]
     fn verbatim_disk<'path>() {
         let path = br"\\?\C:\hello";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
@@ -140,12 +136,7 @@ mod iter {
     #[test]
     fn prefix_noroot<'path>() {
         let path = br"C:";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 1);
@@ -160,12 +151,7 @@ mod iter {
     #[test]
     fn invalid_char<'path>() {
         let path = br"C:\hello.";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
@@ -197,12 +183,7 @@ mod iter {
     #[test]
     fn verbatim_path<'path>() {
         let path = br"\\?\hello\world";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
@@ -231,11 +212,7 @@ mod iter {
         // WHEN
         // --------------------
         // iterating over the path
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
 
@@ -276,12 +253,7 @@ mod iter {
     #[test]
     fn relative_path<'path>() {
         let path = br"hello\world";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 2);
@@ -297,12 +269,7 @@ mod iter {
     #[test]
     fn double_path_separator<'path>() {
         let path = br"hello\\world";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
@@ -319,12 +286,7 @@ mod iter {
     #[test]
     fn curdir<'path>() {
         let path = br"hello\world\.\what\now";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 5);
@@ -343,12 +305,7 @@ mod iter {
     #[test]
     fn parentdir<'path>() {
         let path = br"hello\world\..\what\now";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 5);
@@ -367,12 +324,7 @@ mod iter {
     #[test]
     fn curdir_at_start<'path>() {
         let path = br".\hello\world";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
@@ -389,12 +341,7 @@ mod iter {
     #[test]
     fn parentdir_at_start<'path>() {
         let path = br"..\hello\world\";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 3);
@@ -411,12 +358,7 @@ mod iter {
     #[test]
     fn mixed_separator<'path>() {
         let path = br"hello\world/what\now/brown/cow";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 6);
@@ -436,12 +378,7 @@ mod iter {
     #[test]
     fn empty_path<'path>() {
         let path = b"";
-
-        #[cfg(unix)]
-        let iter = Iter::new(path);
-
-        #[cfg(windows)]
-        let iter = Iter::new(Vec::from(path));
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
         let expected: Vec<PathComponent<'path>> = vec![Ok(Component::CurDir)];

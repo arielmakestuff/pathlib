@@ -7,7 +7,14 @@
 // Modules
 // ===========================================================================
 
+#[cfg(unix)]
 pub mod path;
+
+#[cfg(unix)]
+mod unix_iter;
+
+#[cfg(windows)]
+mod windows_iter;
 
 mod path_type;
 
@@ -16,21 +23,24 @@ mod path_type;
 // ===========================================================================
 
 // Stdlib imports
-use std::ffi::OsStr;
-use std::str;
 
 // Third-party imports
 
 // Local imports
-use self::path_type::Separator;
-use crate::common::error::ParseError;
-use crate::common::string::{as_osstr, as_str, is_char};
-use crate::common::{AsPath, PathData};
 use crate::path::{Path, PathBuf};
-use crate::{component_asref_impl, pathiter_trait_impl};
 
 // ===========================================================================
-// Error types
+// Re-exports
+// ===========================================================================
+
+#[cfg(unix)]
+pub use self::unix_iter::{Component, Iter, PathComponent};
+
+#[cfg(windows)]
+pub use self::windows_iter::{Component, Iter, PathComponent};
+
+// ===========================================================================
+// Types needed for Iter
 // ===========================================================================
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,35 +48,7 @@ pub enum UnixErrorKind {
     InvalidCharacter,
 }
 
-// ===========================================================================
-// Iter
-// ===========================================================================
-
-pub type PathComponent<'path> = Result<Component<'path>, ParseError<'path>>;
-
-#[derive(Debug, Eq, PartialEq)]
-pub enum Component<'path> {
-    RootDir,
-    CurDir,
-    ParentDir,
-    Normal(&'path OsStr),
-}
-
-impl<'path> Component<'path> {
-    pub fn as_os_str(&self) -> &'path OsStr {
-        match self {
-            Component::RootDir => OsStr::new("/"),
-            Component::CurDir => OsStr::new("."),
-            Component::ParentDir => OsStr::new(".."),
-            Component::Normal(comp) => comp,
-        }
-    }
-}
-
-// Implement AsRef<OsStr> and AsRef<Path> for Component
-component_asref_impl!(Component, 'path);
-
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
 enum PathParseState {
     Start,
     Root,
@@ -74,38 +56,16 @@ enum PathParseState {
     Finish,
 }
 
-#[derive(Debug, Eq, PartialEq)]
-pub struct Iter<'path> {
-    #[cfg(unix)]
-    path: &'path [u8],
+// ===========================================================================
+// Macros
+// ===========================================================================
 
-    #[cfg(windows)]
-    path: Vec<u8>,
+#[macro_export]
+macro_rules! unix_iter_body {
+    ($pathcomp:ty, $comp:ty) => {
 
-    parse_state: PathParseState,
-    cur: usize,
-}
 
-impl<'path> Iter<'path> {
-    #[cfg(unix)]
-    pub fn new(path: &[u8]) -> Iter {
-        Iter {
-            path: path,
-            parse_state: PathParseState::Start,
-            cur: 0,
-        }
-    }
-
-    #[cfg(windows)]
-    pub fn new(path: Vec<u8>) -> Iter {
-        Iter {
-            path: path,
-            parse_state: PathParseState::Start,
-            cur: 0,
-        }
-    }
-
-    fn parse_root(&mut self) -> Option<PathComponent<'path>> {
+    fn parse_root(&mut self) -> Option<$pathcomp> {
         // This case will only happen if the input path is empty
         if self.cur == self.path.len() {
             self.parse_state = PathParseState::PathComponent;
@@ -114,10 +74,8 @@ impl<'path> Iter<'path> {
 
         self.parse_state = PathParseState::Root;
 
-        let path_str = as_str(self.path.as_ref());
-
         // Check for root
-        if Separator == self.path[self.cur] && is_char(path_str, self.cur) {
+        if Separator == self.path[self.cur] {
             self.cur += 1;
             let ret = Component::RootDir;
             return Some(Ok(ret));
@@ -126,7 +84,7 @@ impl<'path> Iter<'path> {
         self.parse_component()
     }
 
-    fn parse_component(&mut self) -> Option<PathComponent<'path>> {
+    fn parse_component(&mut self) -> Option<$pathcomp> {
         let end = self.path.len();
         let cur = self.cur;
 
@@ -136,20 +94,18 @@ impl<'path> Iter<'path> {
         }
 
         let mut ret = None;
-        let path_str = as_str(self.path.as_ref());
         let mut has_invalid_char = false;
         for i in cur..end {
-            if !is_char(path_str, i) {
-                continue;
-            } else if self.path[i] == b'\x00' {
+            let cur_char = self.path[i];
+            if Null == cur_char {
                 // The null character is not allowed in unix filenames
                 has_invalid_char = true;
-            } else if Separator == self.path[i] {
-                let part = &self.path[cur..i];
-                let comp = if part.len() == 0 {
+            } else if Separator == cur_char {
+                let part_len = i - cur;
+                let comp = if part_len == 0 {
                     Ok(Component::CurDir)
                 } else {
-                    self.to_comp(part, has_invalid_char)
+                    self.to_comp(cur, i, has_invalid_char)
                 };
                 ret = Some(comp);
                 self.cur = i + 1;
@@ -165,7 +121,7 @@ impl<'path> Iter<'path> {
         match ret {
             Some(_) => ret,
             None => {
-                let comp = self.to_comp(&self.path[cur..end], has_invalid_char);
+                let comp = self.to_comp(cur, end, has_invalid_char);
                 self.cur = end;
                 Some(comp)
             }
@@ -174,48 +130,51 @@ impl<'path> Iter<'path> {
 
     fn to_comp(
         &mut self,
-        part: &'path [u8],
+        start: usize,
+        end: usize,
         found_err: bool,
-    ) -> Result<Component<'path>, ParseError<'path>> {
-        let comp_str = as_str(part);
-
+    ) -> Result<$comp, ParseError> {
         if found_err {
-            self.invalid_char(comp_str)
+            self.invalid_char(start, end)
         } else {
-            let ret = match comp_str {
-                "." => Component::CurDir,
-                ".." => Component::ParentDir,
-                _ => Component::Normal(OsStr::new(comp_str)),
-            };
-            Ok(ret)
+            let comp_str = as_str(&self.path[start..end]);
+            Ok(Component::from(comp_str))
         }
     }
 
     fn invalid_char(
         &mut self,
-        part: &'path str,
-    ) -> Result<Component<'path>, ParseError<'path>> {
+        start: usize,
+        end: usize,
+    ) -> Result<$comp, ParseError> {
         // Return None for every call to next() after this
         self.parse_state = PathParseState::Finish;
 
         let msg = String::from("path component contains an invalid character");
         let err = ParseError::new(
             UnixErrorKind::InvalidCharacter.into(),
-            OsStr::new(part),
-            as_osstr(self.path),
-            self.cur,
-            self.cur + part.len(),
+            OsString::from(as_str(&self.path[start..end])),
+            OsString::from(as_str(self.path.as_ref())),
+            start,
+            end,
             msg,
         );
 
         Err(err)
     }
+
+
+    };
 }
 
-impl<'path> Iterator for Iter<'path> {
-    type Item = PathComponent<'path>;
+#[macro_export]
+macro_rules! unix_iter_iterator_body {
+    ($pathcomp:ty) => {
 
-    fn next(&mut self) -> Option<PathComponent<'path>> {
+
+    type Item = $pathcomp;
+
+    fn next(&mut self) -> Option<$pathcomp> {
         match self.parse_state {
             PathParseState::Start => self.parse_root(),
             PathParseState::Root | PathParseState::PathComponent => {
@@ -224,16 +183,34 @@ impl<'path> Iterator for Iter<'path> {
             PathParseState::Finish => None,
         }
     }
+
+
+    };
 }
 
-// Implement PathData and AsPath traits for Iter
-pathiter_trait_impl!(Iter, 'path);
+// ===========================================================================
+// Traits
+// ===========================================================================
 
-// Defines and implements UnixMemoryPath
-memory_path!(UnixMemoryPath, Path);
+pub trait UnixMemoryPath<'path> {
+    fn iter(&'path self) -> Iter<'path>;
+}
 
-// Implements UnixMemoryPath and defines and implements UnixMemoryPathBuf
-memory_pathbuf!(UnixMemoryPathBuf, UnixMemoryPath, PathBuf);
+pub trait UnixMemoryPathBuf<'path>: UnixMemoryPath<'path> {}
+
+impl<'path> UnixMemoryPath<'path> for Path {
+    fn iter(&'path self) -> Iter<'path> {
+        Iter::new(self)
+    }
+}
+
+impl<'path> UnixMemoryPath<'path> for PathBuf {
+    fn iter(&'path self) -> Iter<'path> {
+        Iter::new(self.as_ref())
+    }
+}
+
+impl<'path> UnixMemoryPathBuf<'path> for PathBuf {}
 
 // ===========================================================================
 //

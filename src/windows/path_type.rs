@@ -177,20 +177,10 @@ pub struct Device;
 
 impl PartialEq<&[u8]> for Device {
     fn eq(&self, other: &&[u8]) -> bool {
-        let v: Vec<u8> = other.iter().map(|&e| e).collect();
-        let mut s = match String::from_utf8(v) {
-            Err(_) => return false,
-            Ok(s) => s.to_uppercase(),
-        };
-
         let ext_start = {
             let mut index = 0;
-
-            let s_str = &s[..];
-            for (i, cur_char) in s.chars().enumerate() {
-                if !s_str.is_char_boundary(i) {
-                    continue;
-                } else if cur_char == '.' {
+            for (i, byte) in other.iter().enumerate() {
+                if *byte == b'.' {
                     index = i;
                 }
             }
@@ -198,11 +188,18 @@ impl PartialEq<&[u8]> for Device {
             index
         };
 
-        if ext_start > 0 {
-            s = (&s[..ext_start]).to_owned();
-        }
+        let bytes = {
+            if ext_start == 0 {
+                other.to_vec()
+            } else {
+                other[..ext_start].to_vec()
+            }
+        };
 
-        RESERVED_NAMES.contains(&s)
+        match String::from_utf8(bytes) {
+            Err(_) => false,
+            Ok(s) => RESERVED_NAMES.contains(&s.to_uppercase()),
+        }
     }
 }
 

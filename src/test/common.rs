@@ -4,6 +4,12 @@
 // This file is released under the MIT License.
 
 // ===========================================================================
+// Modules
+// ===========================================================================
+
+pub mod path_type;
+
+// ===========================================================================
 // Imports
 // ===========================================================================
 
@@ -18,6 +24,9 @@ use crate::path::Path;
 use crate::pathiter_trait_impl;
 use crate::{unix, windows};
 
+#[cfg(windows)]
+use crate::path::PathBuf;
+
 // ===========================================================================
 // Setup
 // ===========================================================================
@@ -30,7 +39,7 @@ macro_rules! build_path_struct {
         }
 
         pathiter_trait_impl!(TestPath, 'path);
-    }
+    };
 }
 
 macro_rules! build_component_struct {
@@ -73,12 +82,9 @@ impl<'path> PathIterBuilder for TestPathIterBuilder {
 }
 
 impl<'path> PathIterBuilder for UnixPathIterBuilder {
+    #[cfg(unix)]
     fn build(&self, path: &'static [u8], index: usize) -> Box<dyn AsRef<Path>> {
-        #[cfg(unix)]
-        let mut pathiter = windows::Iter::new(path);
-
-        #[cfg(windows)]
-        let mut pathiter = windows::Iter::new(Vec::from(path));
+        let mut pathiter = unix::Iter::new(Path::from_bytes(path));
 
         // make sure the iterator's internal index matches index
         let mut cur = 0;
@@ -92,15 +98,28 @@ impl<'path> PathIterBuilder for UnixPathIterBuilder {
 
         Box::new(pathiter)
     }
+
+    #[cfg(windows)]
+    fn build(&self, path: &'static [u8], index: usize) -> PathBuf {
+        let mut pathiter = unix::Iter::new(Path::from_bytes(path));
+
+        // make sure the iterator's internal index matches index
+        let mut cur = 0;
+        while pathiter.next().is_some() {
+            cur = pathiter.current_index();
+            if cur == index {
+                break;
+            }
+        }
+        assert_eq!(cur, index);
+
+        (&pathiter).into()
+    }
 }
 
 impl<'path> PathIterBuilder for WindowsPathIterBuilder {
     fn build(&self, path: &'static [u8], index: usize) -> Box<dyn AsRef<Path>> {
-        #[cfg(unix)]
-        let mut pathiter = windows::Iter::new(path);
-
-        #[cfg(windows)]
-        let mut pathiter = windows::Iter::new(Vec::from(path));
+        let mut pathiter = windows::Iter::new(Path::from_bytes(path));
 
         // make sure the iterator's internal index matches index
         let mut cur = 0;
@@ -162,6 +181,36 @@ impl<'path> CompBuilder for WindowsCompBuilder {
 
 // Make impl_pathiter_asref_path tests
 macro_rules! impl_pathiter_asref_path {
+    ($testname:ident, $builder:ident, $pathobj:ident) => {
+        #[cfg(unix)]
+        #[test]
+        fn $testname() {
+            let path = b"hello/world";
+
+            // index points to the 'w'
+            let index = 6;
+
+            let pathobj = $builder.build(path, index);
+            let pathobj = pathobj.as_ref();
+
+            let expected = Path::new(OsStr::new(as_str(&path[index..])));
+            assert_eq!(pathobj.as_ref(), expected);
+        }
+
+        #[cfg(windows)]
+        #[test]
+        fn $testname() {
+            let path = b"hello/world";
+
+            // index points to the 'w'
+            let index = 6;
+
+            let pathobj = $builder.build(path, index);
+
+            let expected = $pathobj::from(OsStr::new(as_str(&path[index..])));
+            assert_eq!(pathobj, expected);
+        }
+    };
     ($testname:ident, $builder:ident) => {
         #[test]
         fn $testname() {
@@ -180,7 +229,7 @@ macro_rules! impl_pathiter_asref_path {
 }
 
 impl_pathiter_asref_path!(ref_path_asref_path, TestPathIterBuilder);
-impl_pathiter_asref_path!(unix_path_asref_path, UnixPathIterBuilder);
+impl_pathiter_asref_path!(unix_path_asref_path, UnixPathIterBuilder, PathBuf);
 impl_pathiter_asref_path!(windows_path_asref_path, WindowsPathIterBuilder);
 
 // ===========================================================================

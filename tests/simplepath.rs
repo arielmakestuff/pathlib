@@ -73,7 +73,7 @@ mod iter {
 
     #[test]
     fn simple_unix_pathbuf() {
-        let path = PathBuf::new("/hello/world/greetings/planet");
+        let path = PathBuf::from("/hello/world/greetings/planet");
         let comp: Vec<_> = UnixMemoryPathBuf::iter(&path).collect();
 
         let expected = vec![
@@ -89,7 +89,7 @@ mod iter {
 
     #[test]
     fn simple_windows_pathbuf() {
-        let path = PathBuf::new("C:/hello/world/greetings/planet");
+        let path = PathBuf::from("C:/hello/world/greetings/planet");
         let comp: Vec<_> = WindowsMemoryPathBuf::iter(&path).collect();
 
         let expected = vec![

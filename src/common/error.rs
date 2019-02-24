@@ -9,7 +9,7 @@
 
 // Stdlib imports
 pub use std::error::Error;
-use std::ffi::OsStr;
+use std::ffi::OsString;
 
 // Third-party imports
 
@@ -48,24 +48,24 @@ impl From<WindowsErrorKind> for ParseErrorKind {
     end,
     msg
 )]
-pub struct ParseError<'path> {
+pub struct ParseError {
     _kind: ParseErrorKind,
-    component: &'path OsStr,
-    path: &'path OsStr,
+    component: OsString,
+    path: OsString,
     start: usize,
     end: usize,
     msg: String,
 }
 
-impl<'path> ParseError<'path> {
+impl ParseError {
     pub(crate) fn new(
         kind: ParseErrorKind,
-        component: &'path OsStr,
-        path: &'path OsStr,
+        component: OsString,
+        path: OsString,
         start: usize,
         end: usize,
         msg: String,
-    ) -> ParseError<'path> {
+    ) -> ParseError {
         ParseError {
             _kind: kind,
             component,
@@ -81,7 +81,7 @@ impl<'path> ParseError<'path> {
     }
 }
 
-impl<'path> Error for ParseError<'path> {
+impl Error for ParseError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         None
     }

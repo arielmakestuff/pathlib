@@ -23,11 +23,20 @@ mod path_type;
 // ===========================================================================
 
 // Stdlib imports
+use std::ffi::OsString;
 
 // Third-party imports
 
 // Local imports
 use crate::path::{Path, PathBuf};
+
+// Platform imports
+
+#[cfg(unix)]
+use crate::common::string::as_osstr;
+
+#[cfg(windows)]
+use std::os::windows::ffi::OsStringExt;
 
 // ===========================================================================
 // Re-exports
@@ -54,6 +63,20 @@ enum PathParseState {
     Root,
     PathComponent,
     Finish,
+}
+
+// ===========================================================================
+// Helpers
+// ===========================================================================
+
+#[cfg(unix)]
+pub(crate) fn as_os_string(path: &[u8]) -> OsString {
+    OsString::from(as_osstr(path))
+}
+
+#[cfg(windows)]
+pub(crate) fn as_os_string(path: &[u16]) -> OsString {
+    OsString::from_wide(path)
 }
 
 // ===========================================================================
@@ -137,8 +160,7 @@ macro_rules! unix_iter_body {
         if found_err {
             self.invalid_char(start, end)
         } else {
-            let comp_str = as_str(&self.path[start..end]);
-            Ok(Component::from(comp_str))
+            Ok(Component::from(&self.path[start..end]))
         }
     }
 
@@ -153,8 +175,8 @@ macro_rules! unix_iter_body {
         let msg = String::from("path component contains an invalid character");
         let err = ParseError::new(
             UnixErrorKind::InvalidCharacter.into(),
-            OsString::from(as_str(&self.path[start..end])),
-            OsString::from(as_str(self.path.as_ref())),
+            as_os_string(&self.path[start..end]),
+            as_os_string(&self.path[..]),
             start,
             end,
             msg,

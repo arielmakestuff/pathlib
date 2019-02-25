@@ -15,16 +15,6 @@
 use crate::path::{Path, PathBuf};
 
 // ===========================================================================
-// Globals
-// ===========================================================================
-
-#[cfg(unix)]
-type CodePoint = u8;
-
-#[cfg(windows)]
-type CodePoint = u16;
-
-// ===========================================================================
 // Tests
 // ===========================================================================
 
@@ -41,13 +31,13 @@ fn convert_path_to_vec_with_into() {
     // --------------------
     // WHEN
     // --------------------
-    // Converting the Path to a Vec<CodePoint>
-    let bytes: Vec<CodePoint> = path.into();
+    // Converting the Path to a Vec<u8>
+    let bytes: Vec<u8> = path.into();
 
     // --------------------
     // THEN
     // --------------------
-    // a Vec<CodePoint> containing code points representing the path is returned
+    // a Vec<u8> containing code points representing the path is returned
     let expected = pathstr.to_vec();
     assert_eq!(bytes, expected);
 }
@@ -65,14 +55,14 @@ fn convert_path_to_vec_with_from() {
     // --------------------
     // WHEN
     // --------------------
-    // Converting the Path to a Vec<CodePoint>
+    // Converting the Path to a Vec<u8>
     let bytes = Vec::from(path);
 
     // --------------------
     // THEN
     // --------------------
-    // a Vec<CodePoint> containing code points representing the path is returned
-    let expected: Vec<CodePoint> = pathstr.to_vec();
+    // a Vec<u8> containing code points representing the path is returned
+    let expected: Vec<u8> = pathstr.to_vec();
     assert_eq!(bytes, expected);
 }
 
@@ -89,13 +79,13 @@ fn convert_pathbuf_to_vec_with_into() {
     // --------------------
     // WHEN
     // --------------------
-    // Converting the Path to a Vec<CodePoint>
-    let bytes: Vec<CodePoint> = path.into();
+    // Converting the Path to a Vec<u8>
+    let bytes: Vec<u8> = path.into();
 
     // --------------------
     // THEN
     // --------------------
-    // a Vec<CodePoint> containing code points representing the path is returned
+    // a Vec<u8> containing code points representing the path is returned
     let expected = pathstr.to_vec();
     assert_eq!(bytes, expected);
 }
@@ -113,14 +103,14 @@ fn convert_pathbuf_to_vec_with_from() {
     // --------------------
     // WHEN
     // --------------------
-    // Converting the Path to a Vec<CodePoint>
+    // Converting the Path to a Vec<u8>
     let bytes = Vec::from(path);
 
     // --------------------
     // THEN
     // --------------------
-    // a Vec<CodePoint> containing code points representing the path is returned
-    let expected: Vec<CodePoint> = pathstr.to_vec();
+    // a Vec<u8> containing code points representing the path is returned
+    let expected: Vec<u8> = pathstr.to_vec();
     assert_eq!(bytes, expected);
 }
 

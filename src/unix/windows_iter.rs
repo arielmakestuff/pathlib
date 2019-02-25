@@ -9,17 +9,16 @@
 
 // Stdlib imports
 use std::ffi::{OsStr, OsString};
+use std::os::windows::ffi::OsStringExt;
 
 // Third-party imports
 
 // Local imports
-use super::path::{Path, PathBuf};
 use super::path_type::{Null, Separator};
 use crate::common::error::ParseError;
-use crate::common::string::as_str;
-use crate::common::{AsPath, PathData};
+use crate::path::{Path, PathBuf};
 
-use super::{PathParseState, UnixErrorKind};
+use super::{as_os_string, PathParseState, UnixErrorKind};
 use crate::{unix_iter_body, unix_iter_iterator_body};
 
 // ===========================================================================
@@ -47,13 +46,20 @@ impl Component {
     }
 }
 
-impl From<&str> for Component {
-    fn from(s: &str) -> Component {
-        match s {
-            "/" => Component::RootDir,
-            "." => Component::CurDir,
-            ".." => Component::ParentDir,
-            _ => Component::Normal(OsString::from(s)),
+impl From<&[u16]> for Component {
+    fn from(s: &[u16]) -> Component {
+        let s_len = s.len();
+        if s_len == 2 && s[0] == u16::from(b'.') && s[0] == s[1] {
+            // Check if s is ".."
+            Component::ParentDir
+        } else if s_len != 1 {
+            Component::Normal(OsString::from_wide(s))
+        } else if s[0] == u16::from(b'/') {
+            Component::RootDir
+        } else if s[0] == u16::from(b'.') {
+            Component::CurDir
+        } else {
+            Component::Normal(OsString::from_wide(s))
         }
     }
 }
@@ -109,7 +115,7 @@ impl<'path> Iterator for Iter<'path> {
 
 impl<'path> From<&Iter<'path>> for PathBuf {
     fn from(i: &Iter<'path>) -> PathBuf {
-        PathBuf::from_utf16(&i.path[self.cur..])
+        PathBuf::from_utf16(&i.path[i.cur..])
     }
 }
 

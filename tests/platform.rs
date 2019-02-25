@@ -1,4 +1,4 @@
-// src/test/unix.rs
+// tests/platform.rs
 // Copyright (C) 2019 authors and contributors (see AUTHORS file)
 //
 // This file is released under the MIT License.
@@ -7,9 +7,11 @@
 // Modules
 // ===========================================================================
 
-mod common;
-mod windows;
+#[cfg(unix)]
 mod unix;
+
+#[cfg(windows)]
+mod windows;
 
 // ===========================================================================
 //

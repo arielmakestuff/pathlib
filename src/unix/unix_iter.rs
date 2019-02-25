@@ -8,7 +8,7 @@
 // ===========================================================================
 
 // Stdlib imports
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsStr;
 
 // Third-party imports
 
@@ -18,7 +18,7 @@ use super::path_type::{Null, Separator};
 use crate::common::error::ParseError;
 use crate::common::string::as_str;
 
-use super::{PathParseState, UnixErrorKind};
+use super::{as_os_string, PathParseState, UnixErrorKind};
 use crate::{unix_iter_body, unix_iter_iterator_body};
 
 // ===========================================================================
@@ -46,8 +46,9 @@ impl<'path> Component<'path> {
     }
 }
 
-impl<'path> From<&'path str> for Component<'path> {
-    fn from(s: &'path str) -> Component<'path> {
+impl<'path> From<&'path [u8]> for Component<'path> {
+    fn from(s: &'path [u8]) -> Component<'path> {
+        let s = as_str(s);
         match s {
             "/" => Component::RootDir,
             "." => Component::CurDir,

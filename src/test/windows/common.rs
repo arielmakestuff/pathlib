@@ -14,18 +14,17 @@ pub mod path_type;
 // ===========================================================================
 
 // Stdlib imports
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 
 // Third-party imports
 
 // Local imports
 use crate::common::{string::as_str, AsPath, PathData};
-use crate::path::Path;
+use crate::path::{Path, PathBuf};
 use crate::pathiter_trait_impl;
 use crate::{unix, windows};
 
-#[cfg(windows)]
-use crate::path::PathBuf;
+// Platform imports
 
 // ===========================================================================
 // Setup
@@ -59,7 +58,7 @@ macro_rules! build_component_struct {
 }
 
 trait PathIterBuilder {
-    fn build(&self, path: &'static [u8], index: usize) -> Box<dyn AsRef<Path>>;
+    fn build(&self, path: &'static [u8], index: usize) -> PathBuf;
 }
 
 trait CompBuilder {
@@ -74,34 +73,18 @@ struct UnixPathIterBuilder;
 struct WindowsPathIterBuilder;
 
 impl<'path> PathIterBuilder for TestPathIterBuilder {
-    fn build(&self, path: &'static [u8], index: usize) -> Box<dyn AsRef<Path>> {
+    fn build(&self, path: &'static [u8], index: usize) -> PathBuf {
         build_path_struct!();
 
-        Box::new(TestPath { path, cur: index })
+        let path = TestPath { path, cur: index };
+        PathBuf::from(path.as_ref())
     }
 }
 
 impl<'path> PathIterBuilder for UnixPathIterBuilder {
-    #[cfg(unix)]
-    fn build(&self, path: &'static [u8], index: usize) -> Box<dyn AsRef<Path>> {
-        let mut pathiter = unix::Iter::new(Path::from_bytes(path));
-
-        // make sure the iterator's internal index matches index
-        let mut cur = 0;
-        while pathiter.next().is_some() {
-            cur = pathiter.current_index();
-            if cur == index {
-                break;
-            }
-        }
-        assert_eq!(cur, index);
-
-        Box::new(pathiter)
-    }
-
-    #[cfg(windows)]
     fn build(&self, path: &'static [u8], index: usize) -> PathBuf {
-        let mut pathiter = unix::Iter::new(Path::from_bytes(path));
+        let pathbuf = PathBuf::from_bytes(path);
+        let mut pathiter = unix::Iter::new(pathbuf.as_ref());
 
         // make sure the iterator's internal index matches index
         let mut cur = 0;
@@ -118,20 +101,24 @@ impl<'path> PathIterBuilder for UnixPathIterBuilder {
 }
 
 impl<'path> PathIterBuilder for WindowsPathIterBuilder {
-    fn build(&self, path: &'static [u8], index: usize) -> Box<dyn AsRef<Path>> {
-        let mut pathiter = windows::Iter::new(Path::from_bytes(path));
+    fn build(&self, path: &'static [u8], index: usize) -> PathBuf {
+        let pathbuf = PathBuf::from_bytes(path);
+        let p = Path::new(&pathbuf);
+        let mut pathiter = windows::Iter::new(p);
 
         // make sure the iterator's internal index matches index
         let mut cur = 0;
         while pathiter.next().is_some() {
             cur = pathiter.current_index();
+            println!("WHAT {} || {}", cur, index);
             if cur == index {
                 break;
             }
         }
         assert_eq!(cur, index);
 
-        Box::new(pathiter)
+        let p = pathiter.as_ref();
+        PathBuf::from(p)
     }
 }
 
@@ -157,10 +144,11 @@ impl<'path> CompBuilder for TestCompBuilder {
 
 impl<'path> CompBuilder for UnixCompBuilder {
     fn build_osstr(&self, path: &'static OsStr) -> Box<dyn AsRef<OsStr>> {
-        Box::new(unix::Component::Normal(path))
+        return Box::new(unix::Component::Normal(OsString::from(path)));
     }
 
     fn build_path(&self, path: &'static OsStr) -> Box<dyn AsRef<Path>> {
+        let path = path.to_os_string();
         Box::new(unix::Component::Normal(path))
     }
 }
@@ -182,22 +170,6 @@ impl<'path> CompBuilder for WindowsCompBuilder {
 // Make impl_pathiter_asref_path tests
 macro_rules! impl_pathiter_asref_path {
     ($testname:ident, $builder:ident, $pathobj:ident) => {
-        #[cfg(unix)]
-        #[test]
-        fn $testname() {
-            let path = b"hello/world";
-
-            // index points to the 'w'
-            let index = 6;
-
-            let pathobj = $builder.build(path, index);
-            let pathobj = pathobj.as_ref();
-
-            let expected = Path::new(OsStr::new(as_str(&path[index..])));
-            assert_eq!(pathobj.as_ref(), expected);
-        }
-
-        #[cfg(windows)]
         #[test]
         fn $testname() {
             let path = b"hello/world";
@@ -220,10 +192,10 @@ macro_rules! impl_pathiter_asref_path {
             let index = 6;
 
             let pathobj = $builder.build(path, index);
-            let pathobj = pathobj.as_ref();
+            let pathobj: &Path = pathobj.as_ref();
 
             let expected = Path::new(OsStr::new(as_str(&path[index..])));
-            assert_eq!(pathobj.as_ref(), expected);
+            assert_eq!(pathobj, expected);
         }
     };
 }

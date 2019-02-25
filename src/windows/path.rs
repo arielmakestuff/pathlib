@@ -31,11 +31,11 @@ use crate::{path_asref_impl, path_struct};
 path_struct!();
 
 impl Path {
-    pub fn from_bytes<P>(p: P) -> PathBuf
+    pub fn from_bytes<P>(p: &P) -> PathBuf
     where
         P: AsRef<[u8]> + ?Sized,
     {
-        Path::new(as_osstr(s.as_ref()))
+        PathBuf::from(as_osstr(p.as_ref()))
     }
 
     pub fn to_utf16(&self) -> Vec<u16> {
@@ -53,26 +53,25 @@ impl From<&Path> for Vec<u16> {
 // PathBuf
 // ===========================================================================
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct PathBuf {
     inner: OsString,
 }
 
 impl PathBuf {
     pub fn new() -> PathBuf {
-        let inner = OsString::new();
-        PathBuf { inner }
+        Default::default()
     }
 
-    pub fn from_bytes<P>(p: P) -> PathBuf
+    pub fn from_bytes<P>(p: &P) -> PathBuf
     where
         P: AsRef<[u8]> + ?Sized,
     {
-        let inner = as_osstr(s.as_ref()).to_os_string();
+        let inner = as_osstr(p.as_ref()).to_os_string();
         PathBuf { inner }
     }
 
-    pub fn from_utf16<P>(p: P) -> PathBuf
+    pub fn from_utf16<P>(p: &P) -> PathBuf
     where
         P: AsRef<[u16]> + ?Sized,
     {
@@ -81,7 +80,7 @@ impl PathBuf {
     }
 
     pub fn to_utf16(&self) -> Vec<u16> {
-        Path::from(self).to_utf16()
+        self.inner.as_os_str().encode_wide().collect()
     }
 
     pub fn as_os_str(&self) -> &OsStr {
@@ -94,7 +93,7 @@ where
     P: AsRef<OsStr> + ?Sized,
 {
     fn from(p: &P) -> PathBuf {
-        let inner = path.as_ref().to_os_string();
+        let inner = p.as_ref().to_os_string();
         PathBuf { inner }
     }
 }

@@ -36,7 +36,7 @@ impl PartialEq<CodePoint> for Separator {
         let sep = b'/';
 
         #[cfg(windows)]
-        let sep = sep as CodePoint;
+        let sep = u16::from(sep);
 
         *other == sep
     }
@@ -68,7 +68,7 @@ impl PartialEq<CodePoint> for Null {
         let null_char = b'\x00';
 
         #[cfg(windows)]
-        let null_char = null_char as CodePoint;
+        let null_char = u16::from(null_char);
 
         *other == null_char
     }

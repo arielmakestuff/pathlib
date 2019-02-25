@@ -1,4 +1,4 @@
-// tests/unixpath.rs
+// tests/windows/simplepath.rs
 // Copyright (C) 2019 authors and contributors (see AUTHORS file)
 //
 // This file is released under the MIT License.
@@ -13,13 +13,11 @@ use std::ffi::OsStr;
 // Third-party imports
 use pathlib::prelude::*;
 
-#[cfg(unix)]
 use pathlib::windows::{
-    Component as WindowsComponent, Prefix, PrefixComponent, WindowsMemoryPath,
+    Component as WindowsComponent, Prefix, WindowsMemoryPath,
     WindowsMemoryPathBuf,
 };
 
-#[cfg(windows)]
 use pathlib::unix::{
     Component as UnixComponent, UnixMemoryPath, UnixMemoryPathBuf,
 };
@@ -34,6 +32,7 @@ use pathlib::Path;
 
 mod iter {
     use super::*;
+    use std::ffi::OsString;
 
     #[test]
     fn simple_unix_path() {
@@ -42,10 +41,10 @@ mod iter {
 
         let expected = vec![
             Ok(UnixComponent::RootDir),
-            Ok(UnixComponent::Normal(OsStr::new("hello"))),
-            Ok(UnixComponent::Normal(OsStr::new("world"))),
-            Ok(UnixComponent::Normal(OsStr::new("greetings"))),
-            Ok(UnixComponent::Normal(OsStr::new("planet"))),
+            Ok(UnixComponent::Normal(OsString::from("hello"))),
+            Ok(UnixComponent::Normal(OsString::from("world"))),
+            Ok(UnixComponent::Normal(OsString::from("greetings"))),
+            Ok(UnixComponent::Normal(OsString::from("planet"))),
         ];
 
         assert_eq!(comp, expected);
@@ -57,18 +56,22 @@ mod iter {
         let comp: Vec<_> = WindowsMemoryPath::iter(path).collect();
 
         let expected = vec![
-            Ok(WindowsComponent::Prefix(PrefixComponent::new(
-                b"C:",
-                Prefix::Disk(b'C'),
-            ))),
-            Ok(WindowsComponent::RootDir(OsStr::new(r"/"))),
+            Ok(WindowsComponent::RootDir(OsStr::new(r"\"))),
             Ok(WindowsComponent::Normal(OsStr::new("hello"))),
             Ok(WindowsComponent::Normal(OsStr::new("world"))),
             Ok(WindowsComponent::Normal(OsStr::new("greetings"))),
             Ok(WindowsComponent::Normal(OsStr::new("planet"))),
         ];
 
-        assert_eq!(comp, expected);
+        let result = match comp[0] {
+            Ok(WindowsComponent::Prefix(prefix_comp)) => {
+                (prefix_comp.as_os_str(), prefix_comp.kind())
+                    == (OsStr::new("C:"), Prefix::Disk(b'C'))
+            }
+            _ => false,
+        };
+        assert!(result);
+        assert_eq!(&comp[1..], &expected[..]);
     }
 
     #[test]
@@ -78,10 +81,10 @@ mod iter {
 
         let expected = vec![
             Ok(UnixComponent::RootDir),
-            Ok(UnixComponent::Normal(OsStr::new("hello"))),
-            Ok(UnixComponent::Normal(OsStr::new("world"))),
-            Ok(UnixComponent::Normal(OsStr::new("greetings"))),
-            Ok(UnixComponent::Normal(OsStr::new("planet"))),
+            Ok(UnixComponent::Normal(OsString::from("hello"))),
+            Ok(UnixComponent::Normal(OsString::from("world"))),
+            Ok(UnixComponent::Normal(OsString::from("greetings"))),
+            Ok(UnixComponent::Normal(OsString::from("planet"))),
         ];
 
         assert_eq!(comp, expected);
@@ -93,18 +96,22 @@ mod iter {
         let comp: Vec<_> = WindowsMemoryPathBuf::iter(&path).collect();
 
         let expected = vec![
-            Ok(WindowsComponent::Prefix(PrefixComponent::new(
-                b"C:",
-                Prefix::Disk(b'C'),
-            ))),
-            Ok(WindowsComponent::RootDir(OsStr::new(r"/"))),
+            Ok(WindowsComponent::RootDir(OsStr::new(r"\"))),
             Ok(WindowsComponent::Normal(OsStr::new("hello"))),
             Ok(WindowsComponent::Normal(OsStr::new("world"))),
             Ok(WindowsComponent::Normal(OsStr::new("greetings"))),
             Ok(WindowsComponent::Normal(OsStr::new("planet"))),
         ];
 
-        assert_eq!(comp, expected);
+        let result = match comp[0] {
+            Ok(WindowsComponent::Prefix(prefix_comp)) => {
+                (prefix_comp.as_os_str(), prefix_comp.kind())
+                    == (OsStr::new("C:"), Prefix::Disk(b'C'))
+            }
+            _ => false,
+        };
+        assert!(result);
+        assert_eq!(&comp[1..], &expected[..]);
     }
 }
 

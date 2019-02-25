@@ -215,7 +215,6 @@ mod test {
     use proptest::prelude::*;
     use proptest::{
         prop_assert, prop_assume, prop_compose, prop_oneof, proptest,
-        proptest_helper,
     };
 
     // Exclude restricted printable chars and any char with ascii code 0 - 31

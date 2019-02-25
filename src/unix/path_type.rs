@@ -100,9 +100,7 @@ mod test {
         use super::*;
         use crate::unix::path_type::Separator;
 
-        use proptest::{
-            prop_assert, prop_assert_ne, prop_assume, proptest, proptest_helper,
-        };
+        use proptest::{prop_assert, prop_assert_ne, prop_assume, proptest};
 
         #[test]
         fn self_equal() {
@@ -144,9 +142,7 @@ mod test {
         use super::*;
         use crate::unix::path_type::Null;
 
-        use proptest::{
-            prop_assert, prop_assert_ne, prop_assume, proptest, proptest_helper,
-        };
+        use proptest::{prop_assert, prop_assert_ne, prop_assume, proptest};
 
         #[test]
         fn self_equal() {

@@ -414,7 +414,6 @@ mod test {
 
         use proptest::{
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
-            proptest_helper,
         };
 
         #[test]
@@ -453,7 +452,6 @@ mod test {
 
         use proptest::{
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
-            proptest_helper,
         };
 
         #[test]
@@ -501,7 +499,6 @@ mod test {
 
         use proptest::{
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
-            proptest_helper,
         };
 
         #[test]
@@ -542,7 +539,7 @@ mod test {
 
                 use proptest::{
                     prop_assert, prop_assert_eq, prop_assert_ne, prop_assume,
-                    proptest, proptest_helper,
+                    proptest,
                 };
 
                 #[test]
@@ -598,7 +595,6 @@ mod test {
 
         use proptest::{
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
-            proptest_helper,
         };
 
         #[test]
@@ -639,10 +635,7 @@ mod test {
 
         use crate::windows::path_type::{DeviceNamespace, RESTRICTED_CHARS};
 
-        use proptest::{
-            prop_assert, prop_assert_eq, prop_assert_ne, proptest,
-            proptest_helper,
-        };
+        use proptest::{prop_assert, prop_assert_eq, prop_assert_ne, proptest};
 
         #[test]
         fn self_equal() {
@@ -681,7 +674,6 @@ mod test {
 
         use proptest::{
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
-            proptest_helper,
         };
 
         #[test]
@@ -738,7 +730,6 @@ mod test {
 
         use proptest::{
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
-            proptest_helper,
         };
 
         #[test]
@@ -788,7 +779,6 @@ mod test {
 
         use proptest::{
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
-            proptest_helper,
         };
 
         #[test]
@@ -870,7 +860,6 @@ mod test {
 
         use proptest::{
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
-            proptest_helper,
         };
 
         #[test]
@@ -950,7 +939,6 @@ mod test {
 
         use proptest::{
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
-            proptest_helper,
         };
 
         #[test]
@@ -1084,7 +1072,6 @@ mod test {
 
         use proptest::{
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
-            proptest_helper,
         };
 
         #[test]
@@ -1117,7 +1104,6 @@ mod test {
 
         use proptest::{
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
-            proptest_helper,
         };
 
         #[test]
@@ -1150,7 +1136,6 @@ mod test {
 
         use proptest::{
             prop_assert, prop_assert_eq, prop_assert_ne, prop_assume, proptest,
-            proptest_helper,
         };
 
         const INVALID_CHARS: &str = r#"[/\\<>:"|?*\x00-\x1F]+"#;

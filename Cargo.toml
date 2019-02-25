@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 lazy_static = "1.2.0"
-derive_more = "0.13"
+derive_more = "0.14"
 
 [dev-dependencies]
-proptest = "0.8.7"
+proptest = "0.9.1"

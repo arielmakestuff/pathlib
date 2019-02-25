@@ -96,9 +96,7 @@ mod test {
     mod currentdir {
         use crate::common::path_type::CurrentDir;
 
-        use proptest::{
-            prop_assert, prop_assert_ne, prop_assume, proptest, proptest_helper,
-        };
+        use proptest::{prop_assert, prop_assert_ne, prop_assume, proptest};
 
         #[test]
         fn self_equal() {
@@ -130,9 +128,7 @@ mod test {
     mod parentdir {
         use crate::common::path_type::ParentDir;
 
-        use proptest::{
-            prop_assert, prop_assert_ne, prop_assume, proptest, proptest_helper,
-        };
+        use proptest::{prop_assert, prop_assert_ne, prop_assume, proptest};
 
         #[test]
         fn self_equal() {

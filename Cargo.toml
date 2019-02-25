@@ -8,5 +8,8 @@ edition = "2018"
 lazy_static = "1.2.0"
 derive_more = "0.14"
 
-[dev-dependencies]
-proptest = "0.9.1"
+[dev-dependencies.proptest]
+version = "0.9"
+default-features = false
+# Enable all default features not known to break code coverage builds
+features = ["default-code-coverage"]

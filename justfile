@@ -1,7 +1,7 @@
 TARGET_DIR = `cargo metadata --no-deps --format-version 1 | jq '.target_directory'`
 
 cov:
-    RUSTC=bin/rustc-proptest-fix cargo tarpaulin -v -o Html --exclude-files src/unix/windows_iter.rs src/windows/path.rs tests/*
+    cargo tarpaulin -v -o Html --exclude-files src/unix/windows_iter.rs src/windows/path.rs tests/*
 
 kcov:
     #!/usr/bin/bash

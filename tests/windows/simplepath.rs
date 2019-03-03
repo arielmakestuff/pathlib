@@ -121,7 +121,7 @@ mod path_type {
     use super::*;
 
     #[test]
-    fn new_pathbuf() {
+    fn new_unixpathbuf() {
         let path = UnixPathBuf::new();
         let comp: Vec<_> = path.iter().collect();
         let expected = vec![Ok(UnixComponent::CurDir)];
@@ -136,14 +136,30 @@ mod path_type {
 
         assert_eq!(&*path, expected);
     }
+
+    #[test]
+    fn new_windowspathbuf() {
+        let path = WindowsPathBuf::new();
+        let comp: Vec<_> = path.iter().collect();
+        let expected = vec![Ok(WindowsComponent::CurDir)];
+
+        assert_eq!(comp, expected);
+    }
+
+    #[test]
+    fn windowspath_derefs_to_path() {
+        let path = WindowsPath::new("hello");
+        let expected = Path::new(OsStr::new("hello"));
+
+        assert_eq!(&*path, expected);
+    }
 }
 
 // TODO: rename this module to `iter` once UnixMemoryPath and UnixMemoryPathBuf
 // have been removed
 mod path_type_iter {
     use super::*;
-    // TODO: uncomment this once WindowsPath has been implemented
-    // use pathlib::windows::PrefixComponent;
+    use pathlib::windows::PrefixComponent;
 
     #[test]
     fn simple_unix_path() {
@@ -161,26 +177,25 @@ mod path_type_iter {
         assert_eq!(comp, expected);
     }
 
-    // TODO: uncomment this once WindowsPath has been implemented
-    // #[test]
-    // fn simple_windows_path() {
-    //     let path = WindowsPath::new("C:/hello/world/greetings/planet");
-    //     let comp: Vec<_> = path.iter(path).collect();
+    #[test]
+    fn simple_windows_path() {
+        let path = WindowsPath::new("C:/hello/world/greetings/planet");
+        let comp: Vec<_> = path.iter().collect();
 
-    //     let expected = vec![
-    //         Ok(WindowsComponent::Prefix(PrefixComponent::new(
-    //             b"C:",
-    //             Prefix::Disk(b'C'),
-    //         ))),
-    //         Ok(WindowsComponent::RootDir(OsStr::new(r"/"))),
-    //         Ok(WindowsComponent::Normal(OsStr::new("hello"))),
-    //         Ok(WindowsComponent::Normal(OsStr::new("world"))),
-    //         Ok(WindowsComponent::Normal(OsStr::new("greetings"))),
-    //         Ok(WindowsComponent::Normal(OsStr::new("planet"))),
-    //     ];
+        let expected = vec![
+            Ok(WindowsComponent::Prefix(PrefixComponent::new(
+                b"C:",
+                Prefix::Disk(b'C'),
+            ))),
+            Ok(WindowsComponent::RootDir(OsStr::new(r"/"))),
+            Ok(WindowsComponent::Normal(OsStr::new("hello"))),
+            Ok(WindowsComponent::Normal(OsStr::new("world"))),
+            Ok(WindowsComponent::Normal(OsStr::new("greetings"))),
+            Ok(WindowsComponent::Normal(OsStr::new("planet"))),
+        ];
 
-    //     assert_eq!(comp, expected);
-    // }
+        assert_eq!(comp, expected);
+    }
 
     #[test]
     fn simple_unix_pathbuf() {
@@ -198,26 +213,25 @@ mod path_type_iter {
         assert_eq!(comp, expected);
     }
 
-    // TODO: uncomment this once WindowsPath has been implemented
-    // #[test]
-    // fn simple_windows_pathbuf() {
-    //     let path = WindowsPathBuf::from("C:/hello/world/greetings/planet");
-    //     let comp: Vec<_> = path.iter().collect();
+    #[test]
+    fn simple_windows_pathbuf() {
+        let path = WindowsPathBuf::from("C:/hello/world/greetings/planet");
+        let comp: Vec<_> = path.iter().collect();
 
-    //     let expected = vec![
-    //         Ok(WindowsComponent::Prefix(PrefixComponent::new(
-    //             b"C:",
-    //             Prefix::Disk(b'C'),
-    //         ))),
-    //         Ok(WindowsComponent::RootDir(OsStr::new(r"/"))),
-    //         Ok(WindowsComponent::Normal(OsStr::new("hello"))),
-    //         Ok(WindowsComponent::Normal(OsStr::new("world"))),
-    //         Ok(WindowsComponent::Normal(OsStr::new("greetings"))),
-    //         Ok(WindowsComponent::Normal(OsStr::new("planet"))),
-    //     ];
+        let expected = vec![
+            Ok(WindowsComponent::Prefix(PrefixComponent::new(
+                b"C:",
+                Prefix::Disk(b'C'),
+            ))),
+            Ok(WindowsComponent::RootDir(OsStr::new(r"/"))),
+            Ok(WindowsComponent::Normal(OsStr::new("hello"))),
+            Ok(WindowsComponent::Normal(OsStr::new("world"))),
+            Ok(WindowsComponent::Normal(OsStr::new("greetings"))),
+            Ok(WindowsComponent::Normal(OsStr::new("planet"))),
+        ];
 
-    //     assert_eq!(comp, expected);
-    // }
+        assert_eq!(comp, expected);
+    }
 }
 
 // ===========================================================================

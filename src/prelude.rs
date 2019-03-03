@@ -24,6 +24,7 @@ pub use crate::path::{Path, PathBuf};
 
 pub use crate::path::MemoryPath as _;
 pub use crate::unix::{UnixPath, UnixPathBuf};
+pub use crate::windows::{WindowsPath, WindowsPathBuf};
 
 #[cfg(unix)]
 pub use crate::unix::{

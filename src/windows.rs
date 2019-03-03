@@ -28,12 +28,14 @@ mod path_type;
 // Stdlib imports
 // use std::cmp::PartialEq;
 use std::collections::HashSet;
+use std::ffi::OsStr;
+use std::ops::Deref;
 
 // Third-party imports
 use lazy_static::lazy_static;
 
 // Local imports
-use crate::path::{Path, PathBuf};
+use crate::path::{MemoryPath, MemoryPathBuf, Path, PathBuf};
 
 // ===========================================================================
 // Re-exports
@@ -146,6 +148,87 @@ impl<'path> WindowsMemoryPath<'path> for PathBuf {
 }
 
 impl<'path> WindowsMemoryPathBuf<'path> for PathBuf {}
+
+// ===========================================================================
+// Path types
+// ===========================================================================
+
+// --------------------
+// WindowsPath
+// --------------------
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct WindowsPath<'path> {
+    path: &'path Path,
+}
+
+impl<'path> WindowsPath<'path> {
+    pub fn new<P: AsRef<OsStr> + ?Sized>(path: &P) -> WindowsPath {
+        WindowsPath {
+            path: Path::new(path),
+        }
+    }
+}
+
+impl<'path> Deref for WindowsPath<'path> {
+    type Target = Path;
+
+    fn deref(&self) -> &Path {
+        self.path
+    }
+}
+
+impl<'path> MemoryPath<'path> for WindowsPath<'path> {
+    type Iter = Iter<'path>;
+
+    fn iter(&self) -> Iter<'path> {
+        Iter::new(self.path)
+    }
+}
+
+// --------------------
+// WindowsPathBuf
+// --------------------
+
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
+pub struct WindowsPathBuf {
+    pathbuf: PathBuf,
+}
+
+impl WindowsPathBuf {
+    pub fn new() -> WindowsPathBuf {
+        Default::default()
+    }
+}
+
+impl Deref for WindowsPathBuf {
+    type Target = PathBuf;
+
+    fn deref(&self) -> &PathBuf {
+        &self.pathbuf
+    }
+}
+
+impl<P> From<&P> for WindowsPathBuf
+where
+    P: AsRef<OsStr> + ?Sized,
+{
+    fn from(p: &P) -> WindowsPathBuf {
+        WindowsPathBuf {
+            pathbuf: PathBuf::from(p),
+        }
+    }
+}
+
+impl<'path> MemoryPath<'path> for WindowsPathBuf {
+    type Iter = Iter<'path>;
+
+    fn iter(&'path self) -> Iter<'path> {
+        Iter::new(self.as_ref())
+    }
+}
+
+impl<'path> MemoryPathBuf<'path> for WindowsPathBuf {}
 
 // ===========================================================================
 //

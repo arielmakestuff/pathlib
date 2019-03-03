@@ -23,12 +23,13 @@ mod path_type;
 // ===========================================================================
 
 // Stdlib imports
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
+use std::ops::Deref;
 
 // Third-party imports
 
 // Local imports
-use crate::path::{Path, PathBuf};
+use crate::path::{MemoryPath, MemoryPathBuf, Path, PathBuf};
 
 // Platform imports
 
@@ -233,6 +234,87 @@ impl<'path> UnixMemoryPath<'path> for PathBuf {
 }
 
 impl<'path> UnixMemoryPathBuf<'path> for PathBuf {}
+
+// ===========================================================================
+// Path types
+// ===========================================================================
+
+// --------------------
+// UnixPath
+// --------------------
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct UnixPath<'path> {
+    path: &'path Path,
+}
+
+impl<'path> UnixPath<'path> {
+    pub fn new<P: AsRef<OsStr> + ?Sized>(path: &P) -> UnixPath {
+        UnixPath {
+            path: Path::new(path),
+        }
+    }
+}
+
+impl<'path> Deref for UnixPath<'path> {
+    type Target = Path;
+
+    fn deref(&self) -> &Path {
+        self.path
+    }
+}
+
+impl<'path> MemoryPath<'path> for UnixPath<'path> {
+    type Iter = Iter<'path>;
+
+    fn iter(&self) -> Iter<'path> {
+        Iter::new(self.path)
+    }
+}
+
+// --------------------
+// UnixPathBuf
+// --------------------
+
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
+pub struct UnixPathBuf {
+    pathbuf: PathBuf,
+}
+
+impl UnixPathBuf {
+    pub fn new() -> UnixPathBuf {
+        Default::default()
+    }
+}
+
+impl Deref for UnixPathBuf {
+    type Target = PathBuf;
+
+    fn deref(&self) -> &PathBuf {
+        &self.pathbuf
+    }
+}
+
+impl<P> From<&P> for UnixPathBuf
+where
+    P: AsRef<OsStr> + ?Sized,
+{
+    fn from(p: &P) -> UnixPathBuf {
+        UnixPathBuf {
+            pathbuf: PathBuf::from(p),
+        }
+    }
+}
+
+impl<'path> MemoryPath<'path> for UnixPathBuf {
+    type Iter = Iter<'path>;
+
+    fn iter(&'path self) -> Iter<'path> {
+        Iter::new(self.as_ref())
+    }
+}
+
+impl<'path> MemoryPathBuf<'path> for UnixPathBuf {}
 
 // ===========================================================================
 //

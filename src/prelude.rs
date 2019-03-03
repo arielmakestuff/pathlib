@@ -18,7 +18,12 @@
 // ===========================================================================
 
 // Local imports
+// TODO: remove the following once UnixMemoryPath and UnixMemoryPathBuf
+// have been removed
 pub use crate::path::{Path, PathBuf};
+
+pub use crate::path::MemoryPath as _;
+pub use crate::unix::{UnixPath, UnixPathBuf};
 
 #[cfg(unix)]
 pub use crate::unix::{

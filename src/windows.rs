@@ -126,30 +126,6 @@ enum PathParseState {
 }
 
 // ===========================================================================
-// Traits
-// ===========================================================================
-
-pub trait WindowsMemoryPath<'path> {
-    fn iter(&'path self) -> Iter<'path>;
-}
-
-pub trait WindowsMemoryPathBuf<'path>: WindowsMemoryPath<'path> {}
-
-impl<'path> WindowsMemoryPath<'path> for Path {
-    fn iter(&'path self) -> Iter<'path> {
-        Iter::new(self)
-    }
-}
-
-impl<'path> WindowsMemoryPath<'path> for PathBuf {
-    fn iter(&'path self) -> Iter<'path> {
-        Iter::new(self.as_ref())
-    }
-}
-
-impl<'path> WindowsMemoryPathBuf<'path> for PathBuf {}
-
-// ===========================================================================
 // Path types
 // ===========================================================================
 

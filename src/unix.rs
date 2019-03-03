@@ -212,30 +212,6 @@ macro_rules! unix_iter_iterator_body {
 }
 
 // ===========================================================================
-// Traits
-// ===========================================================================
-
-pub trait UnixMemoryPath<'path> {
-    fn iter(&'path self) -> Iter<'path>;
-}
-
-pub trait UnixMemoryPathBuf<'path>: UnixMemoryPath<'path> {}
-
-impl<'path> UnixMemoryPath<'path> for Path {
-    fn iter(&'path self) -> Iter<'path> {
-        Iter::new(self)
-    }
-}
-
-impl<'path> UnixMemoryPath<'path> for PathBuf {
-    fn iter(&'path self) -> Iter<'path> {
-        Iter::new(self.as_ref())
-    }
-}
-
-impl<'path> UnixMemoryPathBuf<'path> for PathBuf {}
-
-// ===========================================================================
 // Path types
 // ===========================================================================
 

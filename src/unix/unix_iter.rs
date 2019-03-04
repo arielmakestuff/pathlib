@@ -13,10 +13,10 @@ use std::ffi::OsStr;
 // Third-party imports
 
 // Local imports
-use super::path::Path;
 use super::path_type::{Null, Separator};
 use crate::common::error::ParseError;
 use crate::common::string::as_str;
+use crate::path::Path;
 
 use super::{as_os_string, PathParseState, UnixErrorKind};
 use crate::{unix_iter_body, unix_iter_iterator_body};

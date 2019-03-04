@@ -16,19 +16,11 @@ use std::path::Path as StdPath;
 
 // Local imports
 use crate::common::string::as_osstr;
-use crate::{path_asref_impl, path_struct};
+use crate::path_asref_impl;
 
 // ===========================================================================
 // Path
 // ===========================================================================
-
-// create path struct
-//
-// this macro invocation needs the following imports:
-// * std::ffi::OsStr
-// * crate::path_asref_impl
-// * std::path::Path as StdPath
-path_struct!();
 
 impl Path {
     pub fn from_bytes<P>(p: &P) -> PathBuf

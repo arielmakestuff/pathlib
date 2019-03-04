@@ -10,12 +10,12 @@
 // Stdlib imports
 use std::ffi::OsStr;
 use std::path::Prefix;
-use std::str::from_utf8_unchecked;
 
 // Third-party imports
 
 // Local imports
 use super::{path_type, SEPARATOR};
+use crate::common::string::{as_osstr, as_str};
 
 // ===========================================================================
 // Helpers
@@ -95,7 +95,7 @@ fn match_verbatim(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
 
     let part = &path[first..end];
     if part == path_type::NonUNCPart {
-        let strval = unsafe { from_utf8_unchecked(part) };
+        let strval = as_str(part);
         let val = OsStr::new(strval);
         Some((end, Prefix::Verbatim(val)))
     } else {
@@ -144,12 +144,7 @@ fn match_unc(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
         let server = &path[first..sep_index[0]];
         let share = &path[sep_index[0] + 1..last];
 
-        let (server_val, share_val) = unsafe {
-            (
-                OsStr::new(from_utf8_unchecked(server)),
-                OsStr::new(from_utf8_unchecked(share)),
-            )
-        };
+        let (server_val, share_val) = (as_osstr(server), as_osstr(share));
         let prefix = Prefix::UNC(server_val, share_val);
         Some((last, prefix))
     } else {
@@ -192,8 +187,7 @@ fn match_devicens(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
 
     let part = &path[first..end];
     if part == path_type::DeviceNamespace {
-        let prefix =
-            Prefix::DeviceNS(OsStr::new(unsafe { from_utf8_unchecked(part) }));
+        let prefix = Prefix::DeviceNS(as_osstr(part));
         Some((end, prefix))
     } else {
         None

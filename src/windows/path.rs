@@ -16,6 +16,7 @@ use std::path::Path as StdPath;
 
 // Local imports
 use crate::common::string::as_osstr;
+use crate::path::Path;
 use crate::path_asref_impl;
 
 // ===========================================================================

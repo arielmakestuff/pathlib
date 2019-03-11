@@ -169,8 +169,7 @@ mod iter {
 
         assert_eq!(comp.len(), 2);
 
-        let expected_ok: Vec<PathComponent> =
-            vec![Ok(Component::RootDir)];
+        let expected_ok: Vec<PathComponent> = vec![Ok(Component::RootDir)];
 
         assert_eq!(&comp[..1], &expected_ok[..]);
 

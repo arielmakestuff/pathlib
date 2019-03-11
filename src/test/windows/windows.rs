@@ -62,7 +62,7 @@ mod public_export {
             // Make sure prefix contains the correct data
             let prefix_comp = match prefix {
                 Component::Prefix(pc) => pc,
-                _ => unreachable!()
+                _ => unreachable!(),
             };
             let expected = Prefix::Verbatim(OsStr::new("hello"));
             assert_eq!(prefix_comp.kind(), expected);
@@ -131,7 +131,7 @@ mod iter {
 
         let prefix_comp = match comp[0] {
             Ok(Component::Prefix(pc)) => pc,
-            _ => unreachable!()
+            _ => unreachable!(),
         };
 
         // Make sure prefix comp contains expected data
@@ -150,7 +150,7 @@ mod iter {
 
         let prefix_comp = match comp[0] {
             Ok(Component::Prefix(pc)) => pc,
-            _ => unreachable!()
+            _ => unreachable!(),
         };
 
         assert_eq!(prefix_comp.kind(), Prefix::Disk(b'C'));
@@ -179,7 +179,7 @@ mod iter {
         // Check prefix component is as expected
         let prefix_comp = match comp[0] {
             Ok(Component::Prefix(pc)) => pc,
-            _ => unreachable!()
+            _ => unreachable!(),
         };
         assert_eq!(prefix_comp.kind(), Prefix::Disk(b'C'));
         assert_eq!(prefix_comp.as_os_str(), OsStr::new("C:"));
@@ -221,7 +221,7 @@ mod iter {
         // Check prefix comp is as expected
         let prefix_comp = match comp[0] {
             Ok(Component::Prefix(pc)) => pc,
-            _ => unreachable!()
+            _ => unreachable!(),
         };
         assert_eq!(prefix_comp.kind(), Prefix::Verbatim(OsStr::new("hello")));
         assert_eq!(prefix_comp.as_os_str(), r"\\?\hello");
@@ -267,7 +267,7 @@ mod iter {
         // Check prefix component is as expected
         let prefix_comp = match comp[0] {
             Ok(Component::Prefix(pc)) => pc,
-            _ => unreachable!()
+            _ => unreachable!(),
         };
         assert_eq!(prefix_comp.kind(), Prefix::Verbatim(OsStr::new("hello")));
         assert_eq!(prefix_comp.as_os_str(), OsStr::new(r"\\?\hello"));

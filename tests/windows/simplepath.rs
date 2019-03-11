@@ -99,8 +99,8 @@ mod iter {
         // have a public interface to create a new instance
         let result = match comp[0] {
             Ok(WindowsComponent::Prefix(prefix_comp)) => {
-                (prefix_comp.as_os_str(), prefix_comp.kind()) ==
-                    (OsStr::new("C:"), Prefix::Disk(b'C'))
+                (prefix_comp.as_os_str(), prefix_comp.kind())
+                    == (OsStr::new("C:"), Prefix::Disk(b'C'))
             }
             _ => false,
         };
@@ -142,8 +142,8 @@ mod iter {
         // have a public interface to create a new instance
         let result = match comp[0] {
             Ok(WindowsComponent::Prefix(prefix_comp)) => {
-                (prefix_comp.as_os_str(), prefix_comp.kind()) ==
-                    (OsStr::new("C:"), Prefix::Disk(b'C'))
+                (prefix_comp.as_os_str(), prefix_comp.kind())
+                    == (OsStr::new("C:"), Prefix::Disk(b'C'))
             }
             _ => false,
         };

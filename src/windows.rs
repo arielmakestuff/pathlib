@@ -16,9 +16,7 @@ mod unix_iter;
 #[cfg(windows)]
 mod windows_iter;
 
-#[cfg(unix)]
 mod match_prefix;
-
 mod path_type;
 
 // ===========================================================================

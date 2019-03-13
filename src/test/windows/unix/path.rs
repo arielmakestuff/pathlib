@@ -58,7 +58,7 @@ fn convert_path_to_vec_with_from() {
     // WHEN
     // --------------------
     // Converting the Path to a Vec<u16>
-    let bytes = Vec::from(path);
+    let bytes: Vec<u16> = Vec::from(path);
 
     // --------------------
     // THEN
@@ -106,7 +106,7 @@ fn convert_pathbuf_to_vec_with_from() {
     // WHEN
     // --------------------
     // Converting the Path to a Vec<u16>
-    let bytes = Vec::from(path);
+    let bytes: Vec<u16> = Vec::from(path);
 
     // --------------------
     // THEN

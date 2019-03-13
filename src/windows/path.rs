@@ -24,11 +24,12 @@ use crate::path_asref_impl;
 // ===========================================================================
 
 impl Path {
-    pub fn from_bytes<P>(p: &P) -> PathBuf
+    pub fn from_bytes<T>(s: &T) -> &Path
     where
-        P: AsRef<[u8]> + ?Sized,
+        T: AsRef<[u8]> + ?Sized,
     {
-        PathBuf::from(as_osstr(p.as_ref()))
+        let s = as_osstr(s.as_ref());
+        Path::new(s)
     }
 
     pub fn as_bytes(&self) -> &[u8] {
@@ -43,6 +44,18 @@ impl Path {
 impl From<&Path> for Vec<u16> {
     fn from(p: &Path) -> Vec<u16> {
         p.to_utf16()
+    }
+}
+
+impl From<&Path> for Vec<u8> {
+    fn from(p: &Path) -> Vec<u8> {
+        p.as_bytes().to_vec()
+    }
+}
+
+impl AsRef<[u8]> for Path {
+    fn as_ref(&self) -> &[u8] {
+        self.as_bytes()
     }
 }
 

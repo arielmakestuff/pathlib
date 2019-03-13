@@ -15,8 +15,8 @@ use std::path::Prefix;
 
 // Local imports
 use crate::common::error::*;
-use crate::path::PathBuf;
-use crate::windows::{Component, Iter, PathComponent};
+use crate::path::{Path, PathBuf};
+use crate::windows::{Component, Iter, PathComponent, PrefixComponent};
 
 // ===========================================================================
 // Tests
@@ -119,24 +119,27 @@ mod iter {
         assert_eq!(comp.len(), 3);
 
         let expected: Vec<PathComponent<'path>> = vec![
-            // Ok(Component::Prefix(PrefixComponent::new(
-            //     br"\\?\C:\",
-            //     Prefix::VerbatimDisk(b'C'),
-            // ))),
+            Ok(Component::Prefix(PrefixComponent::new(
+                br"\\?\C:\",
+                Prefix::VerbatimDisk(b'C'),
+            ))),
             Ok(Component::RootDir(OsStr::new(r"\"))),
             Ok(Component::Normal(OsStr::new(r"hello"))),
         ];
 
-        assert_eq!(&comp[1..], &expected[..]);
+        assert_eq!(comp, expected);
 
-        let prefix_comp = match comp[0] {
-            Ok(Component::Prefix(pc)) => pc,
-            _ => unreachable!(),
-        };
+        // TODO: remove the following
+        // assert_eq!(&comp[1..], &expected[..]);
 
-        // Make sure prefix comp contains expected data
-        assert_eq!(prefix_comp.kind(), Prefix::VerbatimDisk(b'C'));
-        assert_eq!(prefix_comp.as_os_str(), OsStr::new(r"\\?\C:"));
+        // let prefix_comp = match comp[0] {
+        //     Ok(Component::Prefix(pc)) => pc,
+        //     _ => unreachable!(),
+        // };
+
+        // // Make sure prefix comp contains expected data
+        // assert_eq!(prefix_comp.kind(), Prefix::VerbatimDisk(b'C'));
+        // assert_eq!(prefix_comp.as_os_str(), OsStr::new(r"\\?\C:"));
     }
 
     #[test]
@@ -148,13 +151,20 @@ mod iter {
         let comp: Vec<PathComponent> = iter.collect();
         assert_eq!(comp.len(), 1);
 
-        let prefix_comp = match comp[0] {
-            Ok(Component::Prefix(pc)) => pc,
-            _ => unreachable!(),
-        };
+        let expected: Vec<PathComponent<'path>> = vec![Ok(Component::Prefix(
+            PrefixComponent::new(br"C:", Prefix::Disk(b'C')),
+        ))];
 
-        assert_eq!(prefix_comp.kind(), Prefix::Disk(b'C'));
-        assert_eq!(prefix_comp.as_os_str(), OsStr::new("C:"));
+        assert_eq!(comp, expected);
+
+        // TODO: remove the following
+        // let prefix_comp = match comp[0] {
+        //     Ok(Component::Prefix(pc)) => pc,
+        //     _ => unreachable!(),
+        // };
+
+        // assert_eq!(prefix_comp.kind(), Prefix::Disk(b'C'));
+        // assert_eq!(prefix_comp.as_os_str(), OsStr::new("C:"));
     }
 
     #[test]
@@ -167,22 +177,25 @@ mod iter {
         assert_eq!(comp.len(), 3);
 
         let expected_ok: Vec<PathComponent<'path>> = vec![
-            // Ok(Component::Prefix(PrefixComponent::new(
-            //     br"C:",
-            //     Prefix::Disk(b'C'),
-            // ))),
+            Ok(Component::Prefix(PrefixComponent::new(
+                br"C:",
+                Prefix::Disk(b'C'),
+            ))),
             Ok(Component::RootDir(OsStr::new(r"\"))),
         ];
 
-        assert_eq!(&comp[1..2], &expected_ok[..]);
+        assert_eq!(&comp[..2], &expected_ok[..]);
 
-        // Check prefix component is as expected
-        let prefix_comp = match comp[0] {
-            Ok(Component::Prefix(pc)) => pc,
-            _ => unreachable!(),
-        };
-        assert_eq!(prefix_comp.kind(), Prefix::Disk(b'C'));
-        assert_eq!(prefix_comp.as_os_str(), OsStr::new("C:"));
+        // TODO: remove the following commented out code
+        // assert_eq!(&comp[1..2], &expected_ok[..]);
+
+        // // Check prefix component is as expected
+        // let prefix_comp = match comp[0] {
+        //     Ok(Component::Prefix(pc)) => pc,
+        //     _ => unreachable!(),
+        // };
+        // assert_eq!(prefix_comp.kind(), Prefix::Disk(b'C'));
+        // assert_eq!(prefix_comp.as_os_str(), OsStr::new("C:"));
 
         // Check last element is an error
         let result = match &comp[2] {
@@ -208,23 +221,26 @@ mod iter {
         assert_eq!(comp.len(), 3);
 
         let expected: Vec<PathComponent<'path>> = vec![
-            // Ok(Component::Prefix(PrefixComponent::new(
-            //     br"\\?\hello",
-            //     Prefix::Verbatim(OsStr::new(r"hello")),
-            // ))),
+            Ok(Component::Prefix(PrefixComponent::new(
+                br"\\?\hello",
+                Prefix::Verbatim(OsStr::new(r"hello")),
+            ))),
             Ok(Component::RootDir(OsStr::new(r"\"))),
             Ok(Component::Normal(OsStr::new(r"world"))),
         ];
 
-        assert_eq!(&comp[1..], &expected[..]);
+        assert_eq!(comp, expected);
 
-        // Check prefix comp is as expected
-        let prefix_comp = match comp[0] {
-            Ok(Component::Prefix(pc)) => pc,
-            _ => unreachable!(),
-        };
-        assert_eq!(prefix_comp.kind(), Prefix::Verbatim(OsStr::new("hello")));
-        assert_eq!(prefix_comp.as_os_str(), r"\\?\hello");
+        // TODO: remove the following
+        // assert_eq!(&comp[1..], &expected[..]);
+
+        // // Check prefix comp is as expected
+        // let prefix_comp = match comp[0] {
+        //     Ok(Component::Prefix(pc)) => pc,
+        //     _ => unreachable!(),
+        // };
+        // assert_eq!(prefix_comp.kind(), Prefix::Verbatim(OsStr::new("hello")));
+        // assert_eq!(prefix_comp.as_os_str(), r"\\?\hello");
     }
 
     #[test]
@@ -255,22 +271,25 @@ mod iter {
         assert_eq!(comp.len(), 3);
 
         let expected_ok: Vec<PathComponent<'path>> = vec![
-            // Ok(Component::Prefix(PrefixComponent::new(
-            //     br"\\?\hello",
-            //     Prefix::Verbatim(OsStr::new(r"hello")),
-            // ))),
+            Ok(Component::Prefix(PrefixComponent::new(
+                br"\\?\hello",
+                Prefix::Verbatim(OsStr::new(r"hello")),
+            ))),
             Ok(Component::RootDir(OsStr::new(r"\"))),
         ];
 
-        assert_eq!(&comp[1..2], &expected_ok[..]);
+        assert_eq!(&comp[..2], &expected_ok[..]);
 
-        // Check prefix component is as expected
-        let prefix_comp = match comp[0] {
-            Ok(Component::Prefix(pc)) => pc,
-            _ => unreachable!(),
-        };
-        assert_eq!(prefix_comp.kind(), Prefix::Verbatim(OsStr::new("hello")));
-        assert_eq!(prefix_comp.as_os_str(), OsStr::new(r"\\?\hello"));
+        // TODO: remove the following commented out code
+        // assert_eq!(&comp[1..2], &expected_ok[..]);
+
+        // // Check prefix component is as expected
+        // let prefix_comp = match comp[0] {
+        //     Ok(Component::Prefix(pc)) => pc,
+        //     _ => unreachable!(),
+        // };
+        // assert_eq!(prefix_comp.kind(), Prefix::Verbatim(OsStr::new("hello")));
+        // assert_eq!(prefix_comp.as_os_str(), OsStr::new(r"\\?\hello"));
 
         // Check last element is an error
         let result = match &comp[2] {
@@ -310,10 +329,11 @@ mod iter {
         let iter = Iter::new(pathbuf.as_ref());
 
         let comp: Vec<PathComponent> = iter.collect();
-        assert_eq!(comp.len(), 2);
+        assert_eq!(comp.len(), 3);
 
         let expected: Vec<PathComponent<'path>> = vec![
             Ok(Component::Normal(OsStr::new(r"hello"))),
+            Ok(Component::CurDir),
             Ok(Component::Normal(OsStr::new(r"world"))),
         ];
 
@@ -327,11 +347,12 @@ mod iter {
         let iter = Iter::new(pathbuf.as_ref());
 
         let comp: Vec<PathComponent> = iter.collect();
-        assert_eq!(comp.len(), 4);
+        assert_eq!(comp.len(), 5);
 
         let expected: Vec<PathComponent<'path>> = vec![
             Ok(Component::Normal(OsStr::new(r"hello"))),
             Ok(Component::Normal(OsStr::new(r"world"))),
+            Ok(Component::CurDir),
             Ok(Component::Normal(OsStr::new(r"what"))),
             Ok(Component::Normal(OsStr::new(r"now"))),
         ];
@@ -419,13 +440,22 @@ mod iter {
     #[test]
     fn empty_path<'path>() {
         let path = b"";
-        let pathbuf = PathBuf::from_bytes(path);
-        let iter = Iter::new(pathbuf.as_ref());
+        let iter = Iter::new(Path::from_bytes(path));
 
         let comp: Vec<PathComponent> = iter.collect();
-        let expected: Vec<PathComponent<'path>> = Vec::new();
+        let expected: Vec<PathComponent<'path>> = vec![Ok(Component::CurDir)];
 
         assert_eq!(comp, expected);
+
+        // TODO: remove the following
+        // let path = b"";
+        // let pathbuf = PathBuf::from_bytes(path);
+        // let iter = Iter::new(pathbuf.as_ref());
+
+        // let comp: Vec<PathComponent> = iter.collect();
+        // let expected: Vec<PathComponent<'path>> = Vec::new();
+
+        // assert_eq!(comp, expected);
     }
 }
 

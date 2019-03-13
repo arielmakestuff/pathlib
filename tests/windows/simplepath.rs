@@ -46,10 +46,10 @@ mod path_type {
     fn new_windowspathbuf() {
         let path = WindowsPathBuf::new();
         let comp: Vec<_> = path.iter().collect();
-        let expected = Vec::new();
+        // let expected = Vec::new();
 
         // TODO: make the following be what is expected
-        // let expected = vec![Ok(WindowsComponent::CurDir)];
+        let expected = vec![Ok(WindowsComponent::CurDir)];
 
         assert_eq!(comp, expected);
     }
@@ -88,25 +88,18 @@ mod iter {
         let comp: Vec<_> = path.iter().collect();
 
         let expected = vec![
-            Ok(WindowsComponent::RootDir(OsStr::new(r"\"))),
+            Ok(WindowsComponent::Prefix(PrefixComponent::new(
+                b"C:",
+                Prefix::Disk(b'C'),
+            ))),
+            Ok(WindowsComponent::RootDir(OsStr::new(r"/"))),
             Ok(WindowsComponent::Normal(OsStr::new("hello"))),
             Ok(WindowsComponent::Normal(OsStr::new("world"))),
             Ok(WindowsComponent::Normal(OsStr::new("greetings"))),
             Ok(WindowsComponent::Normal(OsStr::new("planet"))),
         ];
 
-        // Have to compare this way since std::path::PrefixComponent does not
-        // have a public interface to create a new instance
-        let result = match comp[0] {
-            Ok(WindowsComponent::Prefix(prefix_comp)) => {
-                (prefix_comp.as_os_str(), prefix_comp.kind())
-                    == (OsStr::new("C:"), Prefix::Disk(b'C'))
-            }
-            _ => false,
-        };
-
-        assert!(result);
-        assert_eq!(&comp[1..], &expected[..]);
+        assert_eq!(comp, expected);
     }
 
     #[test]
@@ -131,25 +124,18 @@ mod iter {
         let comp: Vec<_> = path.iter().collect();
 
         let expected = vec![
-            Ok(WindowsComponent::RootDir(OsStr::new(r"\"))),
+            Ok(WindowsComponent::Prefix(PrefixComponent::new(
+                b"C:",
+                Prefix::Disk(b'C'),
+            ))),
+            Ok(WindowsComponent::RootDir(OsStr::new(r"/"))),
             Ok(WindowsComponent::Normal(OsStr::new("hello"))),
             Ok(WindowsComponent::Normal(OsStr::new("world"))),
             Ok(WindowsComponent::Normal(OsStr::new("greetings"))),
             Ok(WindowsComponent::Normal(OsStr::new("planet"))),
         ];
 
-        // Have to compare this way since std::path::PrefixComponent does not
-        // have a public interface to create a new instance
-        let result = match comp[0] {
-            Ok(WindowsComponent::Prefix(prefix_comp)) => {
-                (prefix_comp.as_os_str(), prefix_comp.kind())
-                    == (OsStr::new("C:"), Prefix::Disk(b'C'))
-            }
-            _ => false,
-        };
-
-        assert!(result);
-        assert_eq!(&comp[1..], &expected[..]);
+        assert_eq!(comp, expected);
     }
 }
 

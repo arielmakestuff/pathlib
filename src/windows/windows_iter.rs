@@ -1,4 +1,4 @@
-// src/windows/iter.rs
+// src/windows/windows_iter.rs
 // Copyright (C) 2018 authors and contributors (see AUTHORS file)
 //
 // This file is released under the MIT License.
@@ -12,15 +12,16 @@
 // ===========================================================================
 
 // Stdlib imports
-use std::ffi::OsStr;
-use std::os::windows::ffi::OsStrExt;
-use std::path::{Component as StdComponent, Components, Path as StdPath};
+// use std::cmp::PartialEq;
+use std::ffi::{OsStr, OsString};
 
 // Third-party imports
 
 // Local imports
+use super::match_prefix::match_prefix;
 use super::path_type::{Device, NonDevicePart};
 use crate::common::error::ParseError;
+use crate::common::string::{as_osstr, as_str};
 
 use crate::path::Path;
 
@@ -30,7 +31,13 @@ use super::PathParseState;
 // Re-exports
 // ===========================================================================
 
-pub use std::path::{Prefix, PrefixComponent};
+pub use std::path::Prefix;
+
+// ===========================================================================
+// Constants
+// ===========================================================================
+
+use super::SEPARATOR;
 
 // ===========================================================================
 // Error types
@@ -65,30 +72,6 @@ impl<'path> Component<'path> {
     }
 }
 
-impl<'path> From<StdComponent<'path>> for Component<'path> {
-    fn from(c: StdComponent<'path>) -> Component<'path> {
-        match c {
-            StdComponent::Prefix(p) => Component::Prefix(p),
-            StdComponent::RootDir => Component::RootDir(c.as_os_str()),
-            StdComponent::CurDir => Component::CurDir,
-            StdComponent::ParentDir => Component::ParentDir,
-            StdComponent::Normal(p) => Component::Normal(p),
-        }
-    }
-}
-
-impl<'path> From<Component<'path>> for StdComponent<'path> {
-    fn from(c: Component<'path>) -> StdComponent<'path> {
-        match c {
-            Component::Prefix(p) => StdComponent::Prefix(p),
-            Component::RootDir(_) => StdComponent::RootDir,
-            Component::CurDir => StdComponent::CurDir,
-            Component::ParentDir => StdComponent::ParentDir,
-            Component::Normal(p) => StdComponent::Normal(p),
-        }
-    }
-}
-
 // Implement AsRef<OsStr> and AsRef<Path> for Component
 impl<'path> AsRef<OsStr> for Component<'path> {
     fn as_ref(&self) -> &OsStr {
@@ -103,38 +86,54 @@ impl<'path> AsRef<Path> for Component<'path> {
 }
 
 #[derive(Debug, Eq, PartialEq)]
+pub struct PrefixComponent<'path> {
+    raw: &'path OsStr,
+    parsed: Prefix<'path>,
+}
+
+impl<'path> PrefixComponent<'path> {
+    pub fn new(path: &'path [u8], prefix: Prefix<'path>) -> Self {
+        PrefixComponent {
+            raw: as_osstr(path),
+            parsed: prefix,
+        }
+    }
+
+    pub fn kind(&self) -> Prefix<'path> {
+        self.parsed
+    }
+
+    pub fn as_os_str(&self) -> &'path OsStr {
+        self.raw
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
 pub struct Iter<'path> {
-    source: &'path StdPath,
-    iter: Components<'path>,
+    path: &'path [u8],
     parse_state: PathParseState,
-    comp: Option<StdComponent<'path>>,
     cur: usize,
 }
 
 impl<'path> Iter<'path> {
-    pub fn new(path: &'path Path) -> Iter<'path> {
-        let stdpath = StdPath::new(path);
-        let iter = stdpath.components();
+    pub fn new(path: &'path Path) -> Iter {
         Iter {
-            source: stdpath,
-            iter,
+            path: path.as_ref(),
             parse_state: PathParseState::Start,
-            comp: None,
             cur: 0,
         }
     }
 
-    // self.cur must always be set to something when entering this method
-    fn prefix(&mut self) -> Option<PathComponent<'path>> {
+    fn parse_prefix(&mut self) -> Option<PathComponent<'path>> {
         let mut verbatimdisk = false;
         let mut ret = None;
-        let comp = self.comp.expect("No component found");
-        if let StdComponent::Prefix(prefix_comp) = comp {
-            if let Prefix::VerbatimDisk(_) = prefix_comp.kind() {
+        if let Some((end, prefix)) = match_prefix(self.path) {
+            if let Prefix::VerbatimDisk(_) = prefix {
                 verbatimdisk = true;
             }
+            let prefix_comp = PrefixComponent::new(&self.path[..end], prefix);
+            self.cur = end;
 
-            self.cur += prefix_comp.as_os_str().len();
             ret = Some(Ok(Component::Prefix(prefix_comp)));
         }
 
@@ -144,78 +143,105 @@ impl<'path> Iter<'path> {
             return ret;
         }
 
-        self.root(verbatimdisk)
+        self.parse_root(verbatimdisk)
     }
 
-    fn root(&mut self, verbatimdisk: bool) -> Option<PathComponent<'path>> {
-        let comp = self.comp.expect("No component found");
-        match comp {
-            StdComponent::RootDir => {
-                self.parse_state = PathParseState::Root;
-                if verbatimdisk {
-                    self.cur += comp.as_os_str().len();
-                    Some(Ok(comp.into()))
-                } else {
-                    self.component()
-                }
-            }
-            _ => self.component(),
+    fn parse_root(
+        &mut self,
+        verbatimdisk: bool,
+    ) -> Option<PathComponent<'path>> {
+        let path_len = self.path.len();
+        let cur = self.cur;
+        if path_len == 0 {
+            self.parse_state = PathParseState::PathComponent;
+            return Some(Ok(Component::CurDir));
+        } else if cur == path_len {
+            self.parse_state = PathParseState::Finish;
+            return None;
         }
+
+        self.parse_state = PathParseState::Root;
+
+        let is_root = SEPARATOR.contains(&self.path[self.cur]);
+        if is_root {
+            self.cur += 1;
+        }
+
+        if verbatimdisk || is_root {
+            let end = self.cur;
+            let start = end - 1;
+            let ret = Component::RootDir(as_osstr(&self.path[start..end]));
+            return Some(Ok(ret));
+        }
+
+        self.parse_component()
     }
 
-    fn component(&mut self) -> Option<PathComponent<'path>> {
-        let ret = match self.comp {
-            None => {
-                self.parse_state = PathParseState::Finish;
-                return None;
+    fn parse_component(&mut self) -> Option<PathComponent<'path>> {
+        let end = self.path.len();
+        let cur = self.cur;
+
+        if cur == end {
+            self.parse_state = PathParseState::Finish;
+            return None;
+        }
+
+        let mut ret = None;
+        for i in cur..end {
+            let cur_char = &self.path[i];
+            if SEPARATOR.contains(cur_char) {
+                let part = &self.path[cur..i];
+                let comp = if part.is_empty() {
+                    Ok(Component::CurDir)
+                } else {
+                    self.build_comp(cur, i)
+                };
+                ret = Some(comp);
+                self.cur = i + 1;
+                break;
             }
-            Some(comp) => self.build_comp(comp),
-        };
+        }
 
         match self.parse_state {
             PathParseState::Finish | PathParseState::PathComponent => {}
             _ => self.parse_state = PathParseState::PathComponent,
         }
 
-        Some(ret)
+        match ret {
+            Some(_) => ret,
+            None => {
+                let comp = self.build_comp(cur, end);
+                self.cur = end;
+                Some(comp)
+            }
+        }
     }
 
     fn build_comp(
         &mut self,
-        comp: StdComponent<'path>,
+        start: usize,
+        end: usize,
     ) -> Result<Component<'path>, ParseError> {
-        let part_str = match comp {
-            StdComponent::Normal(p) => {
-                let bytes: Vec<u16> = p.encode_wide().collect();
-                String::from_utf16_lossy(&bytes[..])
-            }
-            _ => return Ok(comp.into()),
-        };
-        let part = part_str.as_bytes();
-        let comp_len = comp.as_os_str().len();
+        let part = &self.path[start..end];
         if part != NonDevicePart {
-            let start = self.cur;
-            let end = start + comp_len;
             if part == Device {
-                self.invalid_name(comp, start, end)
+                self.invalid_name(start, end)
             } else {
-                self.invalid_char(comp, start, end)
+                self.invalid_char(start, end)
             }
         } else {
-            self.cur += comp_len;
-            // If haven't gotten to the end of the path string, add 1 to
-            // represent a separator since any following component will only be
-            // a path component
-            if self.cur < self.source.as_os_str().len() {
-                self.cur += 1;
-            }
-            Ok(comp.into())
+            let comp_str = as_str(part);
+            let ret = match comp_str {
+                "." => Component::CurDir,
+                ".." => Component::ParentDir,
+                _ => Component::Normal(OsStr::new(comp_str)),
+            };
+            Ok(ret)
         }
     }
 
     fn invalid_name(
         &mut self,
-        comp: StdComponent<'path>,
         start: usize,
         end: usize,
     ) -> Result<Component<'path>, ParseError> {
@@ -223,42 +249,34 @@ impl<'path> Iter<'path> {
         self.parse_state = PathParseState::Finish;
 
         let msg = String::from("component uses a restricted name");
-        let errkind = WindowsErrorKind::RestrictedName;
-        self.build_error(errkind, comp, start, end, msg)
+        self.build_error(WindowsErrorKind::RestrictedName, start, end, msg)
     }
 
     fn invalid_char(
         &mut self,
-        comp: StdComponent<'path>,
         start: usize,
         end: usize,
     ) -> Result<Component<'path>, ParseError> {
         // Return None for every call to next() after this
         self.parse_state = PathParseState::Finish;
         let msg = String::from("path component contains an invalid character");
-        self.build_error(
-            WindowsErrorKind::InvalidCharacter,
-            comp,
-            start,
-            end,
-            msg,
-        )
+        self.build_error(WindowsErrorKind::InvalidCharacter, start, end, msg)
     }
 
     fn build_error(
         &self,
         kind: WindowsErrorKind,
-        comp: StdComponent<'path>,
         start: usize,
         end: usize,
         msg: String,
     ) -> Result<Component<'path>, ParseError> {
+        let part = as_str(&self.path[start..end]);
         let err = ParseError::new(
             kind.into(),
-            comp.as_os_str().to_os_string(),
-            self.source.as_os_str().to_os_string(),
-            start,
-            end,
+            OsString::from(part),
+            OsString::from(as_str(self.path)),
+            self.cur,
+            self.cur + part.len(),
             msg,
         );
 
@@ -271,32 +289,17 @@ impl<'path> Iter<'path> {
     }
 }
 
-macro_rules! get_iter_item {
-    ($iter:expr) => {
-        $iter.comp = $iter.iter.next();
-        if $iter.comp.is_none() {
-            $iter.parse_state = PathParseState::Finish;
-            return None;
-        }
-    };
-}
-
 impl<'path> Iterator for Iter<'path> {
     type Item = PathComponent<'path>;
 
     fn next(&mut self) -> Option<PathComponent<'path>> {
         match self.parse_state {
-            PathParseState::Start => {
-                get_iter_item!(self);
-                self.prefix()
-            }
+            PathParseState::Start => self.parse_prefix(),
             PathParseState::Prefix { verbatimdisk } => {
-                get_iter_item!(self);
-                self.root(verbatimdisk)
+                self.parse_root(verbatimdisk)
             }
             PathParseState::Root | PathParseState::PathComponent => {
-                get_iter_item!(self);
-                self.component()
+                self.parse_component()
             }
             PathParseState::Finish => None,
         }
@@ -305,7 +308,7 @@ impl<'path> Iterator for Iter<'path> {
 
 impl<'path> AsRef<Path> for Iter<'path> {
     fn as_ref(&self) -> &Path {
-        Path::new(self.iter.as_path())
+        Path::from_bytes(&self.path[self.cur..])
     }
 }
 

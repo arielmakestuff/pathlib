@@ -29,6 +29,11 @@ pub(crate) fn as_osstr(path: &[u8]) -> &OsStr {
     OsStr::new(as_str(path))
 }
 
+#[cfg(windows)]
+pub(crate) fn os_str_to_bytes(s: &OsStr) -> &[u8] {
+    unsafe { &*(s as *const OsStr as *const [u8]) }
+}
+
 // ===========================================================================
 //
 // ===========================================================================

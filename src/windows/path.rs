@@ -35,18 +35,6 @@ impl From<&Path> for Vec<u16> {
     }
 }
 
-impl From<&Path> for Vec<u8> {
-    fn from(p: &Path) -> Vec<u8> {
-        p.as_bytes().to_vec()
-    }
-}
-
-impl AsRef<[u8]> for Path {
-    fn as_ref(&self) -> &[u8] {
-        self.as_bytes()
-    }
-}
-
 // ===========================================================================
 // PathBuf
 // ===========================================================================

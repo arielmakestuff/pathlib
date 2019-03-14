@@ -24,14 +24,6 @@ use crate::path_asref_impl;
 // ===========================================================================
 
 impl Path {
-    pub fn from_bytes<T>(s: &T) -> &Path
-    where
-        T: AsRef<[u8]> + ?Sized,
-    {
-        let s = as_osstr(s.as_ref());
-        Path::new(s)
-    }
-
     pub fn as_bytes(&self) -> &[u8] {
         os_str_to_bytes(self.as_os_str())
     }

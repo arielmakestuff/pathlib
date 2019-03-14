@@ -14,6 +14,8 @@ use std::path::Path as StdPath;
 // Third-party imports
 
 // Local imports
+use crate::common::string::as_osstr;
+
 #[cfg(unix)]
 pub use crate::unix::path::PathBuf;
 
@@ -43,6 +45,14 @@ pub struct Path {
 impl Path {
     pub fn new<P: AsRef<OsStr> + ?Sized>(path: &P) -> &Path {
         unsafe { &*(path.as_ref() as *const OsStr as *const Path) }
+    }
+
+    pub fn from_bytes<T>(s: &T) -> &Path
+    where
+        T: AsRef<[u8]> + ?Sized,
+    {
+        let s = as_osstr(s.as_ref());
+        Path::new(s)
     }
 
     pub fn as_os_str(&self) -> &OsStr {

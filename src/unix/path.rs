@@ -15,7 +15,6 @@ use std::path::Path as StdPath;
 // Third-party imports
 
 // Local imports
-use crate::common::string::as_osstr;
 use crate::path::Path;
 use crate::path_asref_impl;
 
@@ -24,14 +23,6 @@ use crate::path_asref_impl;
 // ===========================================================================
 
 impl Path {
-    pub fn from_bytes<T>(s: &T) -> &Path
-    where
-        T: AsRef<[u8]> + ?Sized,
-    {
-        let s = as_osstr(s.as_ref());
-        Path::new(s)
-    }
-
     pub fn as_bytes(&self) -> &[u8] {
         self.as_os_str().as_bytes()
     }

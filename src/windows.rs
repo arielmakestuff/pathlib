@@ -7,11 +7,7 @@
 // Modules
 // ===========================================================================
 
-#[cfg(unix)]
-mod unix_iter;
-
-#[cfg(windows)]
-mod windows_iter;
+mod iter;
 
 mod match_prefix;
 mod path_type;
@@ -36,15 +32,7 @@ use crate::path::{MemoryPath, MemoryPathBuf, Path, PathBuf};
 // Re-exports
 // ===========================================================================
 
-#[cfg(unix)]
-pub use self::unix_iter::{
-    Component, Iter, PathComponent, Prefix, PrefixComponent,
-};
-
-#[cfg(windows)]
-pub use self::windows_iter::{
-    Component, Iter, PathComponent, Prefix, PrefixComponent,
-};
+pub use self::iter::{Component, Iter, PathComponent, Prefix, PrefixComponent};
 
 // ===========================================================================
 // Constants

@@ -22,12 +22,6 @@ use crate::path_asref_impl;
 // Path
 // ===========================================================================
 
-impl Path {
-    pub fn as_bytes(&self) -> &[u8] {
-        self.as_os_str().as_bytes()
-    }
-}
-
 impl From<&Path> for Vec<u8> {
     fn from(p: &Path) -> Vec<u8> {
         p.as_bytes().to_vec()

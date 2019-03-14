@@ -11,6 +11,9 @@
 use std::ffi::OsStr;
 use std::path::Path as StdPath;
 
+#[cfg(unix)]
+use std::os::unix::ffi::OsStrExt;
+
 // Third-party imports
 
 // Local imports
@@ -20,7 +23,7 @@ use crate::common::string::as_osstr;
 pub use crate::unix::path::PathBuf;
 
 #[cfg(windows)]
-pub use crate::windows::path::PathBuf;
+pub use crate::{common::string::os_str_as_bytes, windows::path::PathBuf};
 
 // ===========================================================================
 // Macros
@@ -53,6 +56,16 @@ impl Path {
     {
         let s = as_osstr(s.as_ref());
         Path::new(s)
+    }
+
+    #[cfg(unix)]
+    pub fn as_bytes(&self) -> &[u8] {
+        (&self.inner).as_bytes()
+    }
+
+    #[cfg(windows)]
+    pub fn as_bytes(&self) -> &[u8] {
+        os_str_as_bytes(&self.inner)
     }
 
     pub fn as_os_str(&self) -> &OsStr {

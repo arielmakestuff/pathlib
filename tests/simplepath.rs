@@ -1,4 +1,4 @@
-// tests/unix/simplepath.rs
+// tests/simplepath.rs
 // Copyright (C) 2019 authors and contributors (see AUTHORS file)
 //
 // This file is released under the MIT License.

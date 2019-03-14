@@ -16,10 +16,7 @@ mod test;
 
 pub mod path;
 pub mod prelude;
-
-#[macro_use]
 pub mod unix;
-
 pub mod windows;
 
 // ===========================================================================

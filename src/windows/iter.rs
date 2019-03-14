@@ -12,7 +12,6 @@
 // ===========================================================================
 
 // Stdlib imports
-// use std::cmp::PartialEq;
 use std::ffi::{OsStr, OsString};
 
 // Third-party imports

@@ -30,6 +30,7 @@ pub(crate) fn as_osstr(path: &[u8]) -> &OsStr {
 }
 
 #[cfg(windows)]
+#[cfg_attr(tarpaulin, skip)]
 pub(crate) fn os_str_as_bytes(s: &OsStr) -> &[u8] {
     unsafe { &*(s as *const OsStr as *const [u8]) }
 }

@@ -1,4 +1,4 @@
-// src/test/unix/path.rs
+// src/test/path.rs
 // Copyright (C) 2019 authors and contributors (see AUTHORS file)
 //
 // This file is released under the MIT License.
@@ -56,7 +56,7 @@ fn convert_path_to_vec_with_from() {
     // WHEN
     // --------------------
     // Converting the Path to a Vec<u8>
-    let bytes = Vec::from(path);
+    let bytes: Vec<u8> = Vec::from(path);
 
     // --------------------
     // THEN
@@ -104,7 +104,7 @@ fn convert_pathbuf_to_vec_with_from() {
     // WHEN
     // --------------------
     // Converting the Path to a Vec<u8>
-    let bytes = Vec::from(path);
+    let bytes: Vec<u8> = Vec::from(path);
 
     // --------------------
     // THEN

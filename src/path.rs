@@ -74,6 +74,7 @@ impl Path {
 }
 
 #[cfg(windows)]
+#[cfg_attr(tarpaulin, skip)]
 impl Path {
     pub fn as_bytes(&self) -> &[u8] {
         os_str_as_bytes(&self.inner)
@@ -91,6 +92,7 @@ impl From<&Path> for Vec<u8> {
 }
 
 #[cfg(windows)]
+#[cfg_attr(tarpaulin, skip)]
 impl From<&Path> for Vec<u16> {
     fn from(p: &Path) -> Vec<u16> {
         p.to_utf16()
@@ -153,6 +155,7 @@ impl PathBuf {
 }
 
 #[cfg(windows)]
+#[cfg_attr(tarpaulin, skip)]
 impl PathBuf {
     pub fn as_bytes(&self) -> &[u8] {
         os_str_as_bytes(self.inner.as_os_str())
@@ -188,6 +191,7 @@ impl From<PathBuf> for Vec<u8> {
 }
 
 #[cfg(windows)]
+#[cfg_attr(tarpaulin, skip)]
 impl From<PathBuf> for Vec<u16> {
     fn from(p: PathBuf) -> Vec<u16> {
         p.to_utf16()

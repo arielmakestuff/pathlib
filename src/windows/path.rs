@@ -15,7 +15,7 @@ use std::path::Path as StdPath;
 // Third-party imports
 
 // Local imports
-use crate::common::string::{as_osstr, os_str_to_bytes};
+use crate::common::string::{as_osstr, os_str_as_bytes};
 use crate::path::Path;
 use crate::path_asref_impl;
 
@@ -25,7 +25,7 @@ use crate::path_asref_impl;
 
 impl Path {
     pub fn as_bytes(&self) -> &[u8] {
-        os_str_to_bytes(self.as_os_str())
+        os_str_as_bytes(self.as_os_str())
     }
 
     pub fn to_utf16(&self) -> Vec<u16> {

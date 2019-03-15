@@ -12,7 +12,7 @@
 // Third-party imports
 
 // Local imports
-use crate::path::{Path, PathBuf};
+use crate::path::{PlatformPath, PlatformPathBuf};
 
 // ===========================================================================
 // Tests
@@ -23,15 +23,15 @@ fn convert_path_to_vec_with_into() {
     // --------------------
     // GIVEN
     // --------------------
-    // a Path instance
+    // a PlatformPath instance
 
     let pathstr = b"/hello/world";
-    let path = Path::from_bytes(pathstr);
+    let path = PlatformPath::from_bytes(pathstr);
 
     // --------------------
     // WHEN
     // --------------------
-    // Converting the Path to a Vec<u8>
+    // Converting the PlatformPath to a Vec<u8>
     let bytes: Vec<u8> = path.into();
 
     // --------------------
@@ -47,15 +47,15 @@ fn convert_path_to_vec_with_from() {
     // --------------------
     // GIVEN
     // --------------------
-    // a Path instance
+    // a PlatformPath instance
 
     let pathstr = b"/hello/world";
-    let path = Path::from_bytes(pathstr);
+    let path = PlatformPath::from_bytes(pathstr);
 
     // --------------------
     // WHEN
     // --------------------
-    // Converting the Path to a Vec<u8>
+    // Converting the PlatformPath to a Vec<u8>
     let bytes: Vec<u8> = Vec::from(path);
 
     // --------------------
@@ -71,15 +71,15 @@ fn convert_pathbuf_to_vec_with_into() {
     // --------------------
     // GIVEN
     // --------------------
-    // a Path instance
+    // a PlatformPath instance
 
     let pathstr = b"/hello/world";
-    let path = PathBuf::from_bytes(pathstr);
+    let path = PlatformPathBuf::from_bytes(pathstr);
 
     // --------------------
     // WHEN
     // --------------------
-    // Converting the Path to a Vec<u8>
+    // Converting the PlatformPath to a Vec<u8>
     let bytes: Vec<u8> = path.into();
 
     // --------------------
@@ -95,15 +95,15 @@ fn convert_pathbuf_to_vec_with_from() {
     // --------------------
     // GIVEN
     // --------------------
-    // a Path instance
+    // a PlatformPath instance
 
     let pathstr = b"/hello/world";
-    let path = PathBuf::from_bytes(pathstr);
+    let path = PlatformPathBuf::from_bytes(pathstr);
 
     // --------------------
     // WHEN
     // --------------------
-    // Converting the Path to a Vec<u8>
+    // Converting the PlatformPath to a Vec<u8>
     let bytes: Vec<u8> = Vec::from(path);
 
     // --------------------
@@ -119,13 +119,13 @@ fn empty_pathbuf() {
     // --------------------
     // WHEN
     // --------------------
-    // Creating a new empty PathBuf
-    let path = PathBuf::new();
+    // Creating a new empty PlatformPathBuf
+    let path = PlatformPathBuf::new();
 
     // --------------------
     // THEN
     // --------------------
-    // the PathBuf has a length of zero
+    // the PlatformPathBuf has a length of zero
     assert_eq!(path.as_os_str().len(), 0);
 }
 

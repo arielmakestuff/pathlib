@@ -14,7 +14,7 @@ use std::ffi::OsStr;
 use pathlib::prelude::*;
 use pathlib::unix::Component as UnixComponent;
 use pathlib::windows::{Component as WindowsComponent, Prefix};
-use pathlib::Path;
+use pathlib::PlatformPath;
 
 // Local imports
 
@@ -37,7 +37,7 @@ mod path_type {
     #[test]
     fn unixpath_derefs_to_path() {
         let path = UnixPath::new("hello");
-        let expected = Path::new(OsStr::new("hello"));
+        let expected = PlatformPath::new(OsStr::new("hello"));
 
         assert_eq!(&*path, expected);
     }
@@ -54,7 +54,7 @@ mod path_type {
     #[test]
     fn windowspath_derefs_to_path() {
         let path = WindowsPath::new("hello");
-        let expected = Path::new(OsStr::new("hello"));
+        let expected = PlatformPath::new(OsStr::new("hello"));
 
         assert_eq!(&*path, expected);
     }

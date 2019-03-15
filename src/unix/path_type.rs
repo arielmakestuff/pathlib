@@ -15,7 +15,7 @@
 use crate::mk_reverse_equal;
 
 // ===========================================================================
-// Path Prefix Types: Separator
+// PlatformPath Prefix Types: Separator
 // ===========================================================================
 
 #[derive(Debug)]
@@ -43,7 +43,7 @@ impl PartialEq<&[u8]> for Separator {
 mk_reverse_equal!(Separator, &[u8]);
 
 // ===========================================================================
-// Path Prefix Types: Null
+// PlatformPath Prefix Types: Null
 // ===========================================================================
 
 #[derive(Debug)]

@@ -25,7 +25,7 @@ use std::ops::Deref;
 use lazy_static::lazy_static;
 
 // Local imports
-use crate::path::{MemoryPath, MemoryPathBuf, Path, PathBuf};
+use crate::path::{MemoryPath, MemoryPathBuf, PlatformPath, PlatformPathBuf};
 
 // ===========================================================================
 // Re-exports
@@ -108,7 +108,7 @@ enum PathParseState {
 }
 
 // ===========================================================================
-// Path types
+// PlatformPath types
 // ===========================================================================
 
 // --------------------
@@ -117,21 +117,21 @@ enum PathParseState {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct WindowsPath<'path> {
-    path: &'path Path,
+    path: &'path PlatformPath,
 }
 
 impl<'path> WindowsPath<'path> {
     pub fn new<P: AsRef<OsStr> + ?Sized>(path: &P) -> WindowsPath {
         WindowsPath {
-            path: Path::new(path),
+            path: PlatformPath::new(path),
         }
     }
 }
 
 impl<'path> Deref for WindowsPath<'path> {
-    type Target = Path;
+    type Target = PlatformPath;
 
-    fn deref(&self) -> &Path {
+    fn deref(&self) -> &PlatformPath {
         self.path
     }
 }
@@ -150,7 +150,7 @@ impl<'path> MemoryPath<'path> for WindowsPath<'path> {
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct WindowsPathBuf {
-    pathbuf: PathBuf,
+    pathbuf: PlatformPathBuf,
 }
 
 impl WindowsPathBuf {
@@ -160,9 +160,9 @@ impl WindowsPathBuf {
 }
 
 impl Deref for WindowsPathBuf {
-    type Target = PathBuf;
+    type Target = PlatformPathBuf;
 
-    fn deref(&self) -> &PathBuf {
+    fn deref(&self) -> &PlatformPathBuf {
         &self.pathbuf
     }
 }
@@ -173,7 +173,7 @@ where
 {
     fn from(p: &P) -> WindowsPathBuf {
         WindowsPathBuf {
-            pathbuf: PathBuf::from(p),
+            pathbuf: PlatformPathBuf::from(p),
         }
     }
 }

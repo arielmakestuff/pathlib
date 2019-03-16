@@ -50,6 +50,14 @@ pub trait Path {
 
 pub trait PathBuf: Path {}
 
+pub trait MemoryPath<'path> {
+    type Iter: Iterator + 'path;
+
+    fn iter(&'path self) -> Self::Iter;
+}
+
+pub trait MemoryPathBuf<'path>: MemoryPath<'path> {}
+
 // ===========================================================================
 // PlatformPath
 // ===========================================================================
@@ -228,18 +236,6 @@ impl AsRef<OsStr> for PlatformPathBuf {
 }
 
 path_asref_impl!(StdPath, PlatformPathBuf);
-
-// ===========================================================================
-// Traits
-// ===========================================================================
-
-pub trait MemoryPath<'path> {
-    type Iter: Iterator + 'path;
-
-    fn iter(&'path self) -> Self::Iter;
-}
-
-pub trait MemoryPathBuf<'path>: MemoryPath<'path> {}
 
 // ===========================================================================
 //

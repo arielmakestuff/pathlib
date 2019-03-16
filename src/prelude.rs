@@ -18,7 +18,7 @@
 // ===========================================================================
 
 // Local imports
-pub use crate::path::MemoryPath as _;
+pub use crate::path::{MemoryPath as _, Path as _, PathBuf as _};
 pub use crate::unix::{UnixPath, UnixPathBuf};
 pub use crate::windows::{WindowsPath, WindowsPathBuf};
 

@@ -12,7 +12,7 @@
 // Third-party imports
 
 // Local imports
-use crate::path::{PlatformPath, PlatformPathBuf};
+use crate::path::{Path, PlatformPath, PlatformPathBuf};
 
 // ===========================================================================
 // Tests

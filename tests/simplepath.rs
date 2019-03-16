@@ -137,6 +137,114 @@ mod iter {
     }
 }
 
+mod deref {
+    use super::*;
+    use pathlib::windows::WindowsPath;
+
+    #[test]
+    fn unixpath_as_bytes() {
+        // --------------------
+        // GIVEN
+        // --------------------
+        // a UnixPath
+        let path = UnixPath::new("hello");
+
+        // --------------------
+        // WHEN
+        // --------------------
+        // Path::as_bytes() is called on UnixPath
+        let result = path.as_bytes();
+        let bytes_ref: &[u8] = path.as_ref();
+
+        // --------------------
+        // THEN
+        // --------------------
+        // the UnixPath is auto-dereferenced to PlatformPath::as_bytes() and
+        // called
+        let expected = b"hello";
+
+        assert_eq!(result, expected);
+        assert_eq!(bytes_ref, expected);
+    }
+
+    #[test]
+    fn unixpath_as_os_str() {
+        // --------------------
+        // GIVEN
+        // --------------------
+        // a UnixPath
+        let path = UnixPath::new("world");
+
+        // --------------------
+        // WHEN
+        // --------------------
+        // Path::as_os_str() is called on UnixPath
+        let result = path.as_os_str();
+        let os_str_ref: &OsStr = path.as_ref();
+
+        // --------------------
+        // THEN
+        // --------------------
+        // the UnixPath is auto-dereferences to PlatformPath::as_os_str() and
+        // called
+        let expected = OsStr::new("world");
+
+        assert_eq!(result, expected);
+        assert_eq!(os_str_ref, expected);
+    }
+
+    #[test]
+    fn windowspath_as_bytes() {
+        // --------------------
+        // GIVEN
+        // --------------------
+        // a WindowsPath
+
+        // --------------------
+        // WHEN
+        // --------------------
+        // Path::as_bytes() is called on WindowsPath
+        let path = WindowsPath::new("hello");
+        let bytes_ref: &[u8] = path.as_ref();
+
+        // --------------------
+        // THEN
+        // --------------------
+        // the WindowsPath is auto-dereferenced to PlatformPath::as_bytes() and
+        // called
+        let expected = b"hello";
+
+        assert_eq!(path.as_bytes(), expected);
+        assert_eq!(bytes_ref, expected);
+    }
+
+    #[test]
+    fn windowspath_as_os_str() {
+        // --------------------
+        // GIVEN
+        // --------------------
+        // a WindowsPath
+        let path = WindowsPath::new("world");
+
+        // --------------------
+        // WHEN
+        // --------------------
+        // Path::as_os_str() is called on WindowsPath
+        let result = path.as_os_str();
+        let os_str_ref: &OsStr = path.as_ref();
+
+        // --------------------
+        // THEN
+        // --------------------
+        // the WindowsPath is auto-dereferenced to PlatformPath::as_os_str() and
+        // called
+        let expected = OsStr::new("world");
+
+        assert_eq!(result, expected);
+        assert_eq!(os_str_ref, expected);
+    }
+}
+
 // ===========================================================================
 //
 // ===========================================================================

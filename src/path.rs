@@ -40,6 +40,17 @@ macro_rules! path_asref_impl {
 }
 
 // ===========================================================================
+// Traits
+// ===========================================================================
+
+pub trait Path {
+    fn as_bytes(&self) -> &[u8];
+    fn as_os_str(&self) -> &OsStr;
+}
+
+pub trait PathBuf: Path {}
+
+// ===========================================================================
 // PlatformPath
 // ===========================================================================
 
@@ -60,28 +71,30 @@ impl PlatformPath {
         let s = as_osstr(s.as_ref());
         PlatformPath::new(s)
     }
-
-    pub fn as_os_str(&self) -> &OsStr {
-        &self.inner
-    }
-}
-
-#[cfg(unix)]
-impl PlatformPath {
-    pub fn as_bytes(&self) -> &[u8] {
-        (&self.inner).as_bytes()
-    }
 }
 
 #[cfg(windows)]
 #[cfg_attr(tarpaulin, skip)]
 impl PlatformPath {
-    pub fn as_bytes(&self) -> &[u8] {
+    pub fn to_utf16(&self) -> Vec<u16> {
+        self.as_os_str().encode_wide().collect()
+    }
+}
+
+impl Path for PlatformPath {
+    #[cfg(unix)]
+    fn as_bytes(&self) -> &[u8] {
+        (&self.inner).as_bytes()
+    }
+
+    #[cfg(windows)]
+    #[cfg_attr(tarpaulin, skip)]
+    fn as_bytes(&self) -> &[u8] {
         os_str_as_bytes(&self.inner)
     }
 
-    pub fn to_utf16(&self) -> Vec<u16> {
-        self.as_os_str().encode_wide().collect()
+    fn as_os_str(&self) -> &OsStr {
+        &self.inner
     }
 }
 
@@ -141,26 +154,11 @@ impl PlatformPathBuf {
         let inner = as_osstr(p.as_ref()).to_os_string();
         PlatformPathBuf { inner }
     }
-
-    pub fn as_os_str(&self) -> &OsStr {
-        self.inner.as_os_str()
-    }
-}
-
-#[cfg(unix)]
-impl PlatformPathBuf {
-    pub fn as_bytes(&self) -> &[u8] {
-        self.as_os_str().as_bytes()
-    }
 }
 
 #[cfg(windows)]
 #[cfg_attr(tarpaulin, skip)]
 impl PlatformPathBuf {
-    pub fn as_bytes(&self) -> &[u8] {
-        os_str_as_bytes(self.inner.as_os_str())
-    }
-
     pub fn from_utf16<P>(p: &P) -> PlatformPathBuf
     where
         P: AsRef<[u16]> + ?Sized,
@@ -173,6 +171,25 @@ impl PlatformPathBuf {
         self.inner.as_os_str().encode_wide().collect()
     }
 }
+
+impl Path for PlatformPathBuf {
+    #[cfg(unix)]
+    fn as_bytes(&self) -> &[u8] {
+        self.as_os_str().as_bytes()
+    }
+
+    #[cfg(windows)]
+    #[cfg_attr(tarpaulin, skip)]
+    fn as_bytes(&self) -> &[u8] {
+        os_str_as_bytes(self.inner.as_os_str())
+    }
+
+    fn as_os_str(&self) -> &OsStr {
+        self.inner.as_os_str()
+    }
+}
+
+impl PathBuf for PlatformPathBuf {}
 
 impl<P> From<&P> for PlatformPathBuf
 where

@@ -43,12 +43,12 @@ macro_rules! path_asref_impl {
 // Traits
 // ===========================================================================
 
-pub trait Path {
+pub trait SystemSeq {
     fn as_bytes(&self) -> &[u8];
     fn as_os_str(&self) -> &OsStr;
 }
 
-pub trait PathBuf: Path {}
+pub trait PathBuf: SystemSeq {}
 
 pub trait MemoryPath<'path> {
     type Iter: Iterator + 'path;
@@ -89,7 +89,7 @@ impl SystemStr {
     }
 }
 
-impl Path for SystemStr {
+impl SystemSeq for SystemStr {
     #[cfg(unix)]
     fn as_bytes(&self) -> &[u8] {
         (&self.inner).as_bytes()
@@ -180,7 +180,7 @@ impl SystemString {
     }
 }
 
-impl Path for SystemString {
+impl SystemSeq for SystemString {
     #[cfg(unix)]
     fn as_bytes(&self) -> &[u8] {
         self.as_os_str().as_bytes()

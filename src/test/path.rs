@@ -12,7 +12,7 @@
 // Third-party imports
 
 // Local imports
-use crate::path::{Path, SystemStr, SystemString};
+use crate::path::{SystemSeq, SystemStr, SystemString};
 
 // ===========================================================================
 // Tests

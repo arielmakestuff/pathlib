@@ -14,7 +14,7 @@ use std::ffi::OsStr;
 use pathlib::prelude::*;
 use pathlib::unix::Component as UnixComponent;
 use pathlib::windows::{Component as WindowsComponent, Prefix};
-use pathlib::PlatformPath;
+use pathlib::SystemStr;
 
 // Local imports
 
@@ -37,7 +37,7 @@ mod path_type {
     #[test]
     fn unixpath_derefs_to_path() {
         let path = UnixPath::new("hello");
-        let expected = PlatformPath::new(OsStr::new("hello"));
+        let expected = SystemStr::new(OsStr::new("hello"));
 
         assert_eq!(&*path, expected);
     }
@@ -54,7 +54,7 @@ mod path_type {
     #[test]
     fn windowspath_derefs_to_path() {
         let path = WindowsPath::new("hello");
-        let expected = PlatformPath::new(OsStr::new("hello"));
+        let expected = SystemStr::new(OsStr::new("hello"));
 
         assert_eq!(&*path, expected);
     }
@@ -159,7 +159,7 @@ mod deref {
         // --------------------
         // THEN
         // --------------------
-        // the UnixPath is auto-dereferenced to PlatformPath::as_bytes() and
+        // the UnixPath is auto-dereferenced to SystemStr::as_bytes() and
         // called
         let expected = b"hello";
 
@@ -185,7 +185,7 @@ mod deref {
         // --------------------
         // THEN
         // --------------------
-        // the UnixPath is auto-dereferences to PlatformPath::as_os_str() and
+        // the UnixPath is auto-dereferences to SystemStr::as_os_str() and
         // called
         let expected = OsStr::new("world");
 
@@ -210,7 +210,7 @@ mod deref {
         // --------------------
         // THEN
         // --------------------
-        // the WindowsPath is auto-dereferenced to PlatformPath::as_bytes() and
+        // the WindowsPath is auto-dereferenced to SystemStr::as_bytes() and
         // called
         let expected = b"hello";
 
@@ -236,7 +236,7 @@ mod deref {
         // --------------------
         // THEN
         // --------------------
-        // the WindowsPath is auto-dereferenced to PlatformPath::as_os_str() and
+        // the WindowsPath is auto-dereferenced to SystemStr::as_os_str() and
         // called
         let expected = OsStr::new("world");
 

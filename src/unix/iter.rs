@@ -16,7 +16,7 @@ use std::ffi::OsStr;
 use super::path_type::{Null, Separator};
 use crate::common::error::ParseError;
 use crate::common::string::as_str;
-use crate::path::PlatformPath;
+use crate::path::SystemStr;
 
 use super::{as_os_string, PathParseState, UnixErrorKind};
 
@@ -57,16 +57,16 @@ impl<'path> From<&'path [u8]> for Component<'path> {
     }
 }
 
-// Implement AsRef<OsStr> and AsRef<PlatformPath> for Component
+// Implement AsRef<OsStr> and AsRef<SystemStr> for Component
 impl<'path> AsRef<OsStr> for Component<'path> {
     fn as_ref(&self) -> &OsStr {
         self.as_os_str()
     }
 }
 
-impl<'path> AsRef<PlatformPath> for Component<'path> {
-    fn as_ref(&self) -> &PlatformPath {
-        PlatformPath::new(self)
+impl<'path> AsRef<SystemStr> for Component<'path> {
+    fn as_ref(&self) -> &SystemStr {
+        SystemStr::new(self)
     }
 }
 
@@ -82,7 +82,7 @@ pub struct Iter<'path> {
 }
 
 impl<'path> Iter<'path> {
-    pub fn new(path: &PlatformPath) -> Iter {
+    pub fn new(path: &SystemStr) -> Iter {
         Iter {
             path: path.as_ref(),
             parse_state: PathParseState::Start,
@@ -209,9 +209,9 @@ impl<'path> Iterator for Iter<'path> {
     }
 }
 
-impl<'path> AsRef<PlatformPath> for Iter<'path> {
-    fn as_ref(&self) -> &PlatformPath {
-        PlatformPath::from_bytes(&self.path[self.cur..])
+impl<'path> AsRef<SystemStr> for Iter<'path> {
+    fn as_ref(&self) -> &SystemStr {
+        SystemStr::from_bytes(&self.path[self.cur..])
     }
 }
 

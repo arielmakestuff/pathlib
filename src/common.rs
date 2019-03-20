@@ -21,7 +21,7 @@ pub(crate) mod string;
 
 // Local imports
 use self::string::as_osstr;
-use crate::path::PlatformPath;
+use crate::path::SystemStr;
 
 // ===========================================================================
 // Macros
@@ -36,9 +36,9 @@ macro_rules! component_asref_impl {
             }
         }
 
-        impl<$path_lifetime> AsRef<PlatformPath> for $type<$path_lifetime> {
-            fn as_ref(&self) -> &PlatformPath {
-                PlatformPath::new(self)
+        impl<$path_lifetime> AsRef<SystemStr> for $type<$path_lifetime> {
+            fn as_ref(&self) -> &SystemStr {
+                SystemStr::new(self)
             }
         }
     };
@@ -57,10 +57,10 @@ macro_rules! pathiter_trait_impl {
             }
         }
 
-        impl<$path_lifetime> AsPlatformPath for $type<$path_lifetime> {}
+        impl<$path_lifetime> AsSystemStr for $type<$path_lifetime> {}
 
-        impl<$path_lifetime> AsRef<PlatformPath> for $type<$path_lifetime> {
-            fn as_ref(&self) -> &PlatformPath {
+        impl<$path_lifetime> AsRef<SystemStr> for $type<$path_lifetime> {
+            fn as_ref(&self) -> &SystemStr {
                 self.as_path()
             }
         }
@@ -76,8 +76,8 @@ pub trait PathData {
     fn current_index(&self) -> usize;
 }
 
-pub trait AsPlatformPath: PathData {
-    fn as_path(&self) -> &PlatformPath {
+pub trait AsSystemStr: PathData {
+    fn as_path(&self) -> &SystemStr {
         as_osstr(&self.path()[self.current_index()..]).as_ref()
     }
 }

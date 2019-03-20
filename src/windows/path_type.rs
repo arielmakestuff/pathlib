@@ -42,7 +42,7 @@ lazy_static! {
 }
 
 // ===========================================================================
-// PlatformPath Prefix Types: Disk
+// SystemStr Prefix Types: Disk
 // ===========================================================================
 
 #[derive(Debug)]
@@ -65,7 +65,7 @@ impl PartialEq<&[u8]> for Disk {
 mk_reverse_equal!(Disk, &[u8]);
 
 // ===========================================================================
-// PlatformPath Prefix Types: DiskRoot
+// SystemStr Prefix Types: DiskRoot
 // ===========================================================================
 
 #[derive(Debug)]
@@ -88,7 +88,7 @@ impl PartialEq<&[u8]> for DiskRoot {
 mk_reverse_equal!(DiskRoot, &[u8]);
 
 // ===========================================================================
-// PlatformPath Prefix Types: Separator
+// SystemStr Prefix Types: Separator
 // ===========================================================================
 
 #[derive(Debug)]
@@ -103,7 +103,7 @@ impl PartialEq<u8> for Separator {
 mk_reverse_equal!(Separator, u8);
 
 // ===========================================================================
-// PlatformPath Prefix Types: DoubleSlash
+// SystemStr Prefix Types: DoubleSlash
 // ===========================================================================
 
 // Starts with \\ or //

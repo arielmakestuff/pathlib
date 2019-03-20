@@ -19,8 +19,8 @@ use std::ffi::OsStr;
 // Third-party imports
 
 // Local imports
-use crate::common::{string::as_str, AsPlatformPath, PathData};
-use crate::path::PlatformPath;
+use crate::common::{string::as_str, AsSystemStr, PathData};
+use crate::path::SystemStr;
 use crate::pathiter_trait_impl;
 use crate::{unix, windows};
 
@@ -60,12 +60,12 @@ trait PathIterBuilder {
         &self,
         path: &'static [u8],
         index: usize,
-    ) -> Box<dyn AsRef<PlatformPath>>;
+    ) -> Box<dyn AsRef<SystemStr>>;
 }
 
 trait CompBuilder {
     fn build_osstr(&self, path: &'static OsStr) -> Box<dyn AsRef<OsStr>>;
-    fn build_path(&self, path: &'static OsStr) -> Box<dyn AsRef<PlatformPath>>;
+    fn build_path(&self, path: &'static OsStr) -> Box<dyn AsRef<SystemStr>>;
 }
 
 struct TestPathIterBuilder;
@@ -79,7 +79,7 @@ impl<'path> PathIterBuilder for TestPathIterBuilder {
         &self,
         path: &'static [u8],
         index: usize,
-    ) -> Box<dyn AsRef<PlatformPath>> {
+    ) -> Box<dyn AsRef<SystemStr>> {
         build_path_struct!();
 
         Box::new(TestPath { path, cur: index })
@@ -91,8 +91,8 @@ impl<'path> PathIterBuilder for UnixPathIterBuilder {
         &self,
         path: &'static [u8],
         index: usize,
-    ) -> Box<dyn AsRef<PlatformPath>> {
-        let mut pathiter = unix::Iter::new(PlatformPath::from_bytes(path));
+    ) -> Box<dyn AsRef<SystemStr>> {
+        let mut pathiter = unix::Iter::new(SystemStr::from_bytes(path));
 
         // make sure the iterator's internal index matches index
         let mut cur = 0;
@@ -113,8 +113,8 @@ impl<'path> PathIterBuilder for WindowsPathIterBuilder {
         &self,
         path: &'static [u8],
         index: usize,
-    ) -> Box<dyn AsRef<PlatformPath>> {
-        let mut pathiter = windows::Iter::new(PlatformPath::from_bytes(path));
+    ) -> Box<dyn AsRef<SystemStr>> {
+        let mut pathiter = windows::Iter::new(SystemStr::from_bytes(path));
 
         // make sure the iterator's internal index matches index
         let mut cur = 0;
@@ -143,7 +143,7 @@ impl<'path> CompBuilder for TestCompBuilder {
         Box::new(TestComponent { inner: path })
     }
 
-    fn build_path(&self, path: &'static OsStr) -> Box<dyn AsRef<PlatformPath>> {
+    fn build_path(&self, path: &'static OsStr) -> Box<dyn AsRef<SystemStr>> {
         build_component_struct!();
 
         Box::new(TestComponent { inner: path })
@@ -155,7 +155,7 @@ impl<'path> CompBuilder for UnixCompBuilder {
         return Box::new(unix::Component::Normal(path));
     }
 
-    fn build_path(&self, path: &'static OsStr) -> Box<dyn AsRef<PlatformPath>> {
+    fn build_path(&self, path: &'static OsStr) -> Box<dyn AsRef<SystemStr>> {
         Box::new(unix::Component::Normal(path))
     }
 }
@@ -165,13 +165,13 @@ impl<'path> CompBuilder for WindowsCompBuilder {
         Box::new(windows::Component::Normal(path))
     }
 
-    fn build_path(&self, path: &'static OsStr) -> Box<dyn AsRef<PlatformPath>> {
+    fn build_path(&self, path: &'static OsStr) -> Box<dyn AsRef<SystemStr>> {
         Box::new(windows::Component::Normal(path))
     }
 }
 
 // ===========================================================================
-// AsRef<PlatformPath> for Iter tests
+// AsRef<SystemStr> for Iter tests
 // ===========================================================================
 
 // Make impl_pathiter_asref_path tests
@@ -185,10 +185,9 @@ macro_rules! impl_pathiter_asref_path {
             let index = 6;
 
             let pathobj = $builder.build(path, index);
-            let pathobj: &PlatformPath = pathobj.as_ref().as_ref();
+            let pathobj: &SystemStr = pathobj.as_ref().as_ref();
 
-            let expected =
-                PlatformPath::new(OsStr::new(as_str(&path[index..])));
+            let expected = SystemStr::new(OsStr::new(as_str(&path[index..])));
             assert_eq!(pathobj, expected);
         }
     };
@@ -199,7 +198,7 @@ impl_pathiter_asref_path!(unix_path_asref_path, UnixPathIterBuilder);
 impl_pathiter_asref_path!(windows_path_asref_path, WindowsPathIterBuilder);
 
 // ===========================================================================
-// AsRef<OsStr> and AsRef<PlatformPath> for Component tests
+// AsRef<OsStr> and AsRef<SystemStr> for Component tests
 // ===========================================================================
 
 macro_rules! impl_comp_asref {
@@ -216,11 +215,11 @@ macro_rules! impl_comp_asref {
 
         #[test]
         fn $test_path() {
-            let expected = PlatformPath::new(OsStr::new("hello"));
+            let expected = SystemStr::new(OsStr::new("hello"));
             let comp = $builder.build_path(expected.as_ref());
             let comp = comp.as_ref();
 
-            let ref_val: &PlatformPath = comp.as_ref();
+            let ref_val: &SystemStr = comp.as_ref();
             assert_eq!(ref_val, expected);
         }
     };

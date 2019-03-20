@@ -35,8 +35,8 @@ extern crate derive_more;
 // Re-exports
 // ===========================================================================
 
-pub use crate::common::AsPlatformPath;
-pub use crate::path::{PlatformPath, PlatformPathBuf};
+pub use crate::common::AsSystemStr;
+pub use crate::path::{SystemStr, SystemString};
 
 // ===========================================================================
 //

@@ -22,7 +22,7 @@ use std::ops::Deref;
 
 // Local imports
 use crate::common::string::as_osstr;
-use crate::path::{MemoryPath, MemoryPathBuf, PlatformPath, PlatformPathBuf};
+use crate::path::{MemoryPath, MemoryPathBuf, SystemStr, SystemString};
 
 // ===========================================================================
 // Re-exports
@@ -56,7 +56,7 @@ pub(crate) fn as_os_string(path: &[u8]) -> OsString {
 }
 
 // ===========================================================================
-// PlatformPath types
+// SystemStr types
 // ===========================================================================
 
 // --------------------
@@ -65,21 +65,21 @@ pub(crate) fn as_os_string(path: &[u8]) -> OsString {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct UnixPath<'path> {
-    path: &'path PlatformPath,
+    path: &'path SystemStr,
 }
 
 impl<'path> UnixPath<'path> {
     pub fn new<P: AsRef<OsStr> + ?Sized>(path: &P) -> UnixPath {
         UnixPath {
-            path: PlatformPath::new(path),
+            path: SystemStr::new(path),
         }
     }
 }
 
 impl<'path> Deref for UnixPath<'path> {
-    type Target = PlatformPath;
+    type Target = SystemStr;
 
-    fn deref(&self) -> &PlatformPath {
+    fn deref(&self) -> &SystemStr {
         self.path
     }
 }
@@ -98,7 +98,7 @@ impl<'path> MemoryPath<'path> for UnixPath<'path> {
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct UnixPathBuf {
-    pathbuf: PlatformPathBuf,
+    pathbuf: SystemString,
 }
 
 impl UnixPathBuf {
@@ -108,9 +108,9 @@ impl UnixPathBuf {
 }
 
 impl Deref for UnixPathBuf {
-    type Target = PlatformPathBuf;
+    type Target = SystemString;
 
-    fn deref(&self) -> &PlatformPathBuf {
+    fn deref(&self) -> &SystemString {
         &self.pathbuf
     }
 }
@@ -121,7 +121,7 @@ where
 {
     fn from(p: &P) -> UnixPathBuf {
         UnixPathBuf {
-            pathbuf: PlatformPathBuf::from(p),
+            pathbuf: SystemString::from(p),
         }
     }
 }

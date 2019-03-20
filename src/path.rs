@@ -59,37 +59,37 @@ pub trait MemoryPath<'path> {
 pub trait MemoryPathBuf<'path>: MemoryPath<'path> {}
 
 // ===========================================================================
-// PlatformPath
+// SystemStr
 // ===========================================================================
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct PlatformPath {
+pub struct SystemStr {
     inner: OsStr,
 }
 
-impl PlatformPath {
-    pub fn new<P: AsRef<OsStr> + ?Sized>(path: &P) -> &PlatformPath {
-        unsafe { &*(path.as_ref() as *const OsStr as *const PlatformPath) }
+impl SystemStr {
+    pub fn new<P: AsRef<OsStr> + ?Sized>(path: &P) -> &SystemStr {
+        unsafe { &*(path.as_ref() as *const OsStr as *const SystemStr) }
     }
 
-    pub fn from_bytes<T>(s: &T) -> &PlatformPath
+    pub fn from_bytes<T>(s: &T) -> &SystemStr
     where
         T: AsRef<[u8]> + ?Sized,
     {
         let s = as_osstr(s.as_ref());
-        PlatformPath::new(s)
+        SystemStr::new(s)
     }
 }
 
 #[cfg(windows)]
 #[cfg_attr(tarpaulin, skip)]
-impl PlatformPath {
+impl SystemStr {
     pub fn to_utf16(&self) -> Vec<u16> {
         self.as_os_str().encode_wide().collect()
     }
 }
 
-impl Path for PlatformPath {
+impl Path for SystemStr {
     #[cfg(unix)]
     fn as_bytes(&self) -> &[u8] {
         (&self.inner).as_bytes()
@@ -106,73 +106,73 @@ impl Path for PlatformPath {
     }
 }
 
-impl From<&PlatformPath> for Vec<u8> {
-    fn from(p: &PlatformPath) -> Vec<u8> {
+impl From<&SystemStr> for Vec<u8> {
+    fn from(p: &SystemStr) -> Vec<u8> {
         p.as_bytes().to_vec()
     }
 }
 
 #[cfg(windows)]
 #[cfg_attr(tarpaulin, skip)]
-impl From<&PlatformPath> for Vec<u16> {
-    fn from(p: &PlatformPath) -> Vec<u16> {
+impl From<&SystemStr> for Vec<u16> {
+    fn from(p: &SystemStr) -> Vec<u16> {
         p.to_utf16()
     }
 }
 
-impl AsRef<[u8]> for PlatformPath {
+impl AsRef<[u8]> for SystemStr {
     fn as_ref(&self) -> &[u8] {
         self.as_bytes()
     }
 }
 
-unsafe impl Send for PlatformPath {}
+unsafe impl Send for SystemStr {}
 
-unsafe impl Sync for PlatformPath {}
+unsafe impl Sync for SystemStr {}
 
-impl AsRef<OsStr> for PlatformPath {
+impl AsRef<OsStr> for SystemStr {
     fn as_ref(&self) -> &OsStr {
         self.as_os_str()
     }
 }
 
-path_asref_impl!(PlatformPath, PlatformPath);
-path_asref_impl!(PlatformPath, OsStr);
-path_asref_impl!(PlatformPath, StdPath);
-path_asref_impl!(StdPath, PlatformPath);
+path_asref_impl!(SystemStr, SystemStr);
+path_asref_impl!(SystemStr, OsStr);
+path_asref_impl!(SystemStr, StdPath);
+path_asref_impl!(StdPath, SystemStr);
 
 // ===========================================================================
-// PlatformPathBuf
+// SystemString
 // ===========================================================================
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
-pub struct PlatformPathBuf {
+pub struct SystemString {
     inner: OsString,
 }
 
-impl PlatformPathBuf {
-    pub fn new() -> PlatformPathBuf {
+impl SystemString {
+    pub fn new() -> SystemString {
         Default::default()
     }
 
-    pub fn from_bytes<P>(p: &P) -> PlatformPathBuf
+    pub fn from_bytes<P>(p: &P) -> SystemString
     where
         P: AsRef<[u8]> + ?Sized,
     {
         let inner = as_osstr(p.as_ref()).to_os_string();
-        PlatformPathBuf { inner }
+        SystemString { inner }
     }
 }
 
 #[cfg(windows)]
 #[cfg_attr(tarpaulin, skip)]
-impl PlatformPathBuf {
-    pub fn from_utf16<P>(p: &P) -> PlatformPathBuf
+impl SystemString {
+    pub fn from_utf16<P>(p: &P) -> SystemString
     where
         P: AsRef<[u16]> + ?Sized,
     {
         let inner = OsString::from_wide(p.as_ref());
-        PlatformPathBuf { inner }
+        SystemString { inner }
     }
 
     pub fn to_utf16(&self) -> Vec<u16> {
@@ -180,7 +180,7 @@ impl PlatformPathBuf {
     }
 }
 
-impl Path for PlatformPathBuf {
+impl Path for SystemString {
     #[cfg(unix)]
     fn as_bytes(&self) -> &[u8] {
         self.as_os_str().as_bytes()
@@ -197,45 +197,45 @@ impl Path for PlatformPathBuf {
     }
 }
 
-impl PathBuf for PlatformPathBuf {}
+impl PathBuf for SystemString {}
 
-impl<P> From<&P> for PlatformPathBuf
+impl<P> From<&P> for SystemString
 where
     P: AsRef<OsStr> + ?Sized,
 {
-    fn from(p: &P) -> PlatformPathBuf {
+    fn from(p: &P) -> SystemString {
         let inner = p.as_ref().to_os_string();
-        PlatformPathBuf { inner }
+        SystemString { inner }
     }
 }
 
-impl From<PlatformPathBuf> for Vec<u8> {
-    fn from(p: PlatformPathBuf) -> Vec<u8> {
+impl From<SystemString> for Vec<u8> {
+    fn from(p: SystemString) -> Vec<u8> {
         p.as_bytes().to_vec()
     }
 }
 
 #[cfg(windows)]
 #[cfg_attr(tarpaulin, skip)]
-impl From<PlatformPathBuf> for Vec<u16> {
-    fn from(p: PlatformPathBuf) -> Vec<u16> {
+impl From<SystemString> for Vec<u16> {
+    fn from(p: SystemString) -> Vec<u16> {
         p.to_utf16()
     }
 }
 
-impl AsRef<PlatformPath> for PlatformPathBuf {
-    fn as_ref(&self) -> &PlatformPath {
-        PlatformPath::new(self)
+impl AsRef<SystemStr> for SystemString {
+    fn as_ref(&self) -> &SystemStr {
+        SystemStr::new(self)
     }
 }
 
-impl AsRef<OsStr> for PlatformPathBuf {
+impl AsRef<OsStr> for SystemString {
     fn as_ref(&self) -> &OsStr {
         self.as_os_str()
     }
 }
 
-path_asref_impl!(StdPath, PlatformPathBuf);
+path_asref_impl!(StdPath, SystemString);
 
 // ===========================================================================
 //

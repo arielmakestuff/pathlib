@@ -48,7 +48,7 @@ pub trait SystemSeq {
     fn as_os_str(&self) -> &OsStr;
 }
 
-pub trait PathBuf: SystemSeq {}
+pub trait SystemSeqBuf: SystemSeq {}
 
 pub trait MemoryPath<'path> {
     type Iter: Iterator + 'path;
@@ -197,7 +197,7 @@ impl SystemSeq for SystemString {
     }
 }
 
-impl PathBuf for SystemString {}
+impl SystemSeqBuf for SystemString {}
 
 impl<P> From<&P> for SystemString
 where

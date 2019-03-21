@@ -22,7 +22,9 @@ use std::ops::Deref;
 
 // Local imports
 use crate::common::string::as_osstr;
-use crate::path::{MemoryPath, MemoryPathBuf, SystemStr, SystemString};
+use crate::path::{
+    MemoryPath, MemoryPathBuf, MemoryPathParts, SystemStr, SystemString,
+};
 
 // ===========================================================================
 // Re-exports
@@ -89,6 +91,17 @@ impl<'path> MemoryPath<'path> for UnixPath<'path> {
 
     fn iter(&self) -> Iter<'path> {
         Iter::new(self.path)
+    }
+}
+
+impl<'path> Iterator for MemoryPathParts<'path, Iter<'path>> {
+    type Item = OsString;
+
+    fn next(&mut self) -> Option<OsString> {
+        match self.path_iter().next() {
+            Some(Ok(c)) => Some(c.as_os_str().to_os_string()),
+            _ => None,
+        }
     }
 }
 

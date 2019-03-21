@@ -9,6 +9,7 @@
 
 // Stdlib imports
 use std::ffi::{OsStr, OsString};
+use std::marker::PhantomData;
 use std::path::Path as StdPath;
 
 #[cfg(unix)]
@@ -54,9 +55,52 @@ pub trait MemoryPath<'path> {
     type Iter: Iterator + 'path;
 
     fn iter(&'path self) -> Self::Iter;
+
+    // --------------------
+    // Properties
+    // --------------------
+    fn parts(&'path self) -> MemoryPathParts<Self::Iter> {
+        MemoryPathParts::new(self.iter())
+    }
 }
 
 pub trait MemoryPathBuf<'path>: MemoryPath<'path> {}
+
+// ===========================================================================
+// MemoryPathParts
+// ===========================================================================
+
+pub struct MemoryPathParts<'path, I>
+where
+    I: Iterator + 'path,
+{
+    iter: I,
+    cur: Option<OsString>,
+    _phantom: PhantomData<&'path ()>,
+}
+
+impl<'path, I> MemoryPathParts<'path, I>
+where
+    I: Iterator + 'path,
+{
+    fn new(iter: I) -> Self {
+        MemoryPathParts {
+            iter,
+            cur: None,
+            _phantom: PhantomData,
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn stored_item(&mut self) -> &mut Option<OsString> {
+        &mut self.cur
+    }
+
+    #[doc(hidden)]
+    pub fn path_iter(&mut self) -> &mut I {
+        &mut self.iter
+    }
+}
 
 // ===========================================================================
 // SystemStr

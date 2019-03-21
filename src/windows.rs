@@ -18,14 +18,16 @@ mod path_type;
 // Stdlib imports
 // use std::cmp::PartialEq;
 use std::collections::HashSet;
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::ops::Deref;
 
 // Third-party imports
 use lazy_static::lazy_static;
 
 // Local imports
-use crate::path::{MemoryPath, MemoryPathBuf, SystemStr, SystemString};
+use crate::path::{
+    MemoryPath, MemoryPathBuf, MemoryPathParts, SystemStr, SystemString,
+};
 
 // ===========================================================================
 // Re-exports
@@ -141,6 +143,35 @@ impl<'path> MemoryPath<'path> for WindowsPath<'path> {
 
     fn iter(&self) -> Iter<'path> {
         Iter::new(self.path)
+    }
+}
+
+impl<'path> Iterator for MemoryPathParts<'path, Iter<'path>> {
+    type Item = OsString;
+
+    fn next(&mut self) -> Option<OsString> {
+        if self.stored_item().is_some() {
+            return self.stored_item().take();
+        }
+
+        match self.path_iter().next() {
+            Some(Ok(c @ Component::Prefix(_))) => {
+                let mut cur = c.as_os_str().to_os_string();
+                match self.path_iter().next() {
+                    Some(Ok(c @ Component::RootDir(_))) => {
+                        cur.push(c.as_os_str().to_os_string());
+                    }
+                    Some(Ok(c)) => {
+                        self.stored_item()
+                            .replace(c.as_os_str().to_os_string());
+                    }
+                    _ => {}
+                }
+                Some(cur)
+            }
+            Some(Ok(c)) => Some(c.as_os_str().to_os_string()),
+            _ => None,
+        }
     }
 }
 

@@ -18,7 +18,7 @@
 // ===========================================================================
 
 // Local imports
-pub use crate::path::{MemoryPath as _, SystemSeq as _, SystemSeqBuf as _};
+pub use crate::path::{Path as _, SystemSeq as _, SystemSeqBuf as _};
 pub use crate::unix::{UnixPath, UnixPathBuf};
 pub use crate::windows::{WindowsPath, WindowsPathBuf};
 

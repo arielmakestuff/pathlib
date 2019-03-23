@@ -26,8 +26,7 @@ use lazy_static::lazy_static;
 
 // Local imports
 use crate::path::{
-    MemoryPath, MemoryPathBuf, MemoryPathParts, MemoryPathPartsExt as _,
-    SystemStr, SystemString,
+    Path, PathBuf, PathParts, PathPartsExt as _, SystemStr, SystemString,
 };
 
 // ===========================================================================
@@ -139,7 +138,7 @@ impl<'path> Deref for WindowsPath<'path> {
     }
 }
 
-impl<'path> MemoryPath<'path> for WindowsPath<'path> {
+impl<'path> Path<'path> for WindowsPath<'path> {
     type Iter = Iter<'path>;
 
     fn iter(&self) -> Iter<'path> {
@@ -147,7 +146,7 @@ impl<'path> MemoryPath<'path> for WindowsPath<'path> {
     }
 }
 
-impl<'path> Iterator for MemoryPathParts<'path, Iter<'path>> {
+impl<'path> Iterator for PathParts<'path, Iter<'path>> {
     type Item = OsString;
 
     fn next(&mut self) -> Option<OsString> {
@@ -210,7 +209,7 @@ where
     }
 }
 
-impl<'path> MemoryPath<'path> for WindowsPathBuf {
+impl<'path> Path<'path> for WindowsPathBuf {
     type Iter = Iter<'path>;
 
     fn iter(&'path self) -> Iter<'path> {
@@ -218,7 +217,7 @@ impl<'path> MemoryPath<'path> for WindowsPathBuf {
     }
 }
 
-impl<'path> MemoryPathBuf<'path> for WindowsPathBuf {}
+impl<'path> PathBuf<'path> for WindowsPathBuf {}
 
 // ===========================================================================
 //

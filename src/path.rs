@@ -51,7 +51,7 @@ pub trait SystemSeq {
 
 pub trait SystemSeqBuf: SystemSeq {}
 
-pub trait MemoryPath<'path> {
+pub trait Path<'path> {
     type Iter: Iterator + 'path;
 
     fn iter(&'path self) -> Self::Iter;
@@ -59,18 +59,18 @@ pub trait MemoryPath<'path> {
     // --------------------
     // Properties
     // --------------------
-    fn parts(&'path self) -> MemoryPathParts<Self::Iter> {
-        MemoryPathParts::new(self.iter())
+    fn parts(&'path self) -> PathParts<Self::Iter> {
+        PathParts::new(self.iter())
     }
 }
 
-pub trait MemoryPathBuf<'path>: MemoryPath<'path> {}
+pub trait PathBuf<'path>: Path<'path> {}
 
 // ===========================================================================
-// MemoryPathParts
+// PathParts
 // ===========================================================================
 
-pub trait MemoryPathPartsExt<I>
+pub trait PathPartsExt<I>
 where
     I: Iterator,
 {
@@ -78,7 +78,7 @@ where
     fn path_iter(&mut self) -> &mut I;
 }
 
-pub struct MemoryPathParts<'path, I>
+pub struct PathParts<'path, I>
 where
     I: Iterator + 'path,
 {
@@ -87,12 +87,12 @@ where
     _phantom: PhantomData<&'path ()>,
 }
 
-impl<'path, I> MemoryPathParts<'path, I>
+impl<'path, I> PathParts<'path, I>
 where
     I: Iterator + 'path,
 {
     fn new(iter: I) -> Self {
-        MemoryPathParts {
+        PathParts {
             iter,
             cur: None,
             _phantom: PhantomData,
@@ -100,7 +100,7 @@ where
     }
 }
 
-impl<'path, I> MemoryPathPartsExt<I> for MemoryPathParts<'path, I>
+impl<'path, I> PathPartsExt<I> for PathParts<'path, I>
 where
     I: Iterator + 'path,
 {

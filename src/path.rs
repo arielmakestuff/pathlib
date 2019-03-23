@@ -70,6 +70,14 @@ pub trait MemoryPathBuf<'path>: MemoryPath<'path> {}
 // MemoryPathParts
 // ===========================================================================
 
+pub trait MemoryPathPartsExt<I>
+where
+    I: Iterator,
+{
+    fn stored_item(&mut self) -> &mut Option<OsString>;
+    fn path_iter(&mut self) -> &mut I;
+}
+
 pub struct MemoryPathParts<'path, I>
 where
     I: Iterator + 'path,
@@ -90,14 +98,17 @@ where
             _phantom: PhantomData,
         }
     }
+}
 
-    #[doc(hidden)]
-    pub fn stored_item(&mut self) -> &mut Option<OsString> {
+impl<'path, I> MemoryPathPartsExt<I> for MemoryPathParts<'path, I>
+where
+    I: Iterator + 'path,
+{
+    fn stored_item(&mut self) -> &mut Option<OsString> {
         &mut self.cur
     }
 
-    #[doc(hidden)]
-    pub fn path_iter(&mut self) -> &mut I {
+    fn path_iter(&mut self) -> &mut I {
         &mut self.iter
     }
 }

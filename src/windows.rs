@@ -26,7 +26,8 @@ use lazy_static::lazy_static;
 
 // Local imports
 use crate::path::{
-    MemoryPath, MemoryPathBuf, MemoryPathParts, SystemStr, SystemString,
+    MemoryPath, MemoryPathBuf, MemoryPathParts, MemoryPathPartsExt as _,
+    SystemStr, SystemString,
 };
 
 // ===========================================================================

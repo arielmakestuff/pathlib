@@ -39,7 +39,7 @@ mod path_type {
         let path = UnixPath::new("hello");
         let expected = SystemStr::new(OsStr::new("hello"));
 
-        assert_eq!(&*path, expected);
+        assert_eq!(&**path, expected);
     }
 
     #[test]
@@ -56,7 +56,7 @@ mod path_type {
         let path = WindowsPath::new("hello");
         let expected = SystemStr::new(OsStr::new("hello"));
 
-        assert_eq!(&*path, expected);
+        assert_eq!(&**path, expected);
     }
 }
 

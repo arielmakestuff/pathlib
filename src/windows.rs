@@ -118,31 +118,35 @@ enum PathParseState {
 // --------------------
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct WindowsPath<'path> {
-    path: &'path SystemStr,
+pub struct WindowsPath {
+    path: SystemStr,
 }
 
-impl<'path> WindowsPath<'path> {
-    pub fn new<P: AsRef<OsStr> + ?Sized>(path: &P) -> WindowsPath {
-        WindowsPath {
-            path: SystemStr::new(path),
-        }
+impl WindowsPath {
+    pub fn new<P: AsRef<OsStr> + ?Sized>(path: &P) -> &WindowsPath {
+        // This is safe for 2 reasons:
+        //
+        // 1. SystemStr is essentially just an OsStr and WindowsPath is
+        //    essentially just a SystemStr so the type casting is valid wrt
+        //    memory layout
+        // 2. this is strictly returning an immutable reference
+        unsafe { &*(path.as_ref() as *const OsStr as *const WindowsPath) }
     }
 }
 
-impl<'path> Deref for WindowsPath<'path> {
+impl Deref for WindowsPath {
     type Target = SystemStr;
 
     fn deref(&self) -> &SystemStr {
-        self.path
+        &self.path
     }
 }
 
-impl<'path> Path<'path> for WindowsPath<'path> {
+impl<'path> Path<'path> for &'path WindowsPath {
     type Iter = Iter<'path>;
 
     fn iter(&self) -> Iter<'path> {
-        Iter::new(self.path)
+        Iter::new(&self.path)
     }
 }
 

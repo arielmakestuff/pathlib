@@ -66,31 +66,34 @@ pub(crate) fn as_os_string(path: &[u8]) -> OsString {
 // --------------------
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct UnixPath<'path> {
-    path: &'path SystemStr,
+pub struct UnixPath {
+    path: SystemStr,
 }
 
-impl<'path> UnixPath<'path> {
-    pub fn new<P: AsRef<OsStr> + ?Sized>(path: &P) -> UnixPath {
-        UnixPath {
-            path: SystemStr::new(path),
-        }
+impl UnixPath {
+    pub fn new<P: AsRef<OsStr> + ?Sized>(path: &P) -> &UnixPath {
+        // This is safe for 2 reasons:
+        //
+        // 1. SystemStr is essentially just an OsStr and UnixPath is essentially
+        //    just a SystemStr so the type casting is valid wrt memory layout
+        // 2. this is strictly returning an immutable reference
+        unsafe { &*(path.as_ref() as *const OsStr as *const UnixPath) }
     }
 }
 
-impl<'path> Deref for UnixPath<'path> {
+impl Deref for UnixPath {
     type Target = SystemStr;
 
     fn deref(&self) -> &SystemStr {
-        self.path
+        &self.path
     }
 }
 
-impl<'path> Path<'path> for UnixPath<'path> {
+impl<'path> Path<'path> for &'path UnixPath {
     type Iter = Iter<'path>;
 
     fn iter(&self) -> Iter<'path> {
-        Iter::new(self.path)
+        Iter::new(&self.path)
     }
 }
 

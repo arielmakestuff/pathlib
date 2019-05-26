@@ -20,7 +20,7 @@ use std::ffi::OsStr;
 
 // Local imports
 use crate::common::{string::as_str, AsSystemStr, PathData};
-use crate::path::SystemStr;
+use crate::path::{PathIterator, SystemStr};
 use crate::pathiter_trait_impl;
 use crate::{unix, windows};
 

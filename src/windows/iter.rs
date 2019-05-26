@@ -22,7 +22,7 @@ use super::path_type::{Device, NonDevicePart};
 use crate::common::error::ParseError;
 use crate::common::string::{as_osstr, as_str};
 
-use crate::path::SystemStr;
+use crate::path::{PathIterator, SystemStr};
 
 use super::PathParseState;
 
@@ -114,15 +114,17 @@ pub struct Iter<'path> {
     cur: usize,
 }
 
-impl<'path> Iter<'path> {
-    pub fn new(path: &'path SystemStr) -> Iter {
+impl<'path> PathIterator<'path> for Iter<'path> {
+    fn new(path: &'path SystemStr) -> Iter {
         Iter {
             path: path.as_ref(),
             parse_state: PathParseState::Start,
             cur: 0,
         }
     }
+}
 
+impl<'path> Iter<'path> {
     fn parse_prefix(&mut self) -> Option<PathComponent<'path>> {
         let mut verbatimdisk = false;
         let mut ret = None;

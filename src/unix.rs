@@ -23,7 +23,8 @@ use std::ops::Deref;
 // Local imports
 use crate::common::string::as_osstr;
 use crate::path::{
-    Path, PathBuf, PathParts, PathPartsExt as _, SystemStr, SystemString,
+    Path, PathBuf, PathIterator, PathParts, PathPartsExt as _, SystemStr,
+    SystemString,
 };
 
 // ===========================================================================

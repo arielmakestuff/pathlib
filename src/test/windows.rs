@@ -15,7 +15,7 @@ use std::path::Prefix;
 
 // Local imports
 use crate::common::error::*;
-use crate::path::SystemStr;
+use crate::path::{PathIterator, SystemStr};
 use crate::windows::{Component, Iter, PathComponent, PrefixComponent};
 
 // ===========================================================================

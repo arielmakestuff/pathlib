@@ -14,7 +14,7 @@ use std::ffi::{OsStr, OsString};
 // Third-party imports
 
 // Local imports
-use crate::path::SystemStr;
+use crate::path::{PathIterator, SystemStr};
 use crate::unix::{Component, Iter, PathComponent};
 
 // ===========================================================================

@@ -16,7 +16,7 @@ use std::ffi::OsStr;
 use super::path_type::{Null, Separator};
 use crate::common::error::ParseError;
 use crate::common::string::as_str;
-use crate::path::SystemStr;
+use crate::path::{PathIterator, SystemStr};
 
 use super::{as_os_string, PathParseState, UnixErrorKind};
 
@@ -81,15 +81,17 @@ pub struct Iter<'path> {
     cur: usize,
 }
 
-impl<'path> Iter<'path> {
-    pub fn new(path: &SystemStr) -> Iter {
+impl<'path> PathIterator<'path> for Iter<'path> {
+    fn new(path: &SystemStr) -> Iter {
         Iter {
             path: path.as_ref(),
             parse_state: PathParseState::Start,
             cur: 0,
         }
     }
+}
 
+impl<'path> Iter<'path> {
     // unix_iter_body!(PathComponent<'path>, Component<'path>);
     fn parse_root(&mut self) -> Option<PathComponent<'path>> {
         // This case will only happen if the input path is empty

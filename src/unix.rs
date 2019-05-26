@@ -21,7 +21,6 @@ use std::ops::Deref;
 // Third-party imports
 
 // Local imports
-use crate::common::string::as_osstr;
 use crate::path::{
     AsSystemStr, Path, PathBuf, PathParts, PathPartsExt as _, SystemStr,
     SystemString,
@@ -48,14 +47,6 @@ enum PathParseState {
     Root,
     PathComponent,
     Finish,
-}
-
-// ===========================================================================
-// Helpers
-// ===========================================================================
-
-pub(crate) fn as_os_string(path: &[u8]) -> OsString {
-    OsString::from(as_osstr(path))
 }
 
 // ===========================================================================

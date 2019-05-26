@@ -44,6 +44,10 @@ macro_rules! path_asref_impl {
 // Traits
 // ===========================================================================
 
+pub trait AsSystemStr {
+    fn as_sys_str(&self) -> &SystemStr;
+}
+
 pub trait SystemSeq {
     fn as_bytes(&self) -> &[u8];
     fn as_os_str(&self) -> &OsStr;

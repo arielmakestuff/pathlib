@@ -61,20 +61,27 @@ pub trait PathIterator<'path>: Iterator {
         Self: Sized;
 }
 
-pub trait Path<'path> {
-    type Iter: Iterator + 'path;
-
-    fn iter(&'path self) -> Self::Iter;
+pub trait Path<'path, I>: AsSystemStr
+where
+    I: PathIterator<'path>,
+{
+    fn iter(&'path self) -> I {
+        I::new(self.as_sys_str())
+    }
 
     // --------------------
     // Properties
     // --------------------
-    fn parts(&'path self) -> PathParts<Self::Iter> {
+    fn parts(&'path self) -> PathParts<I> {
         PathParts::new(self.iter())
     }
 }
 
-pub trait PathBuf<'path>: Path<'path> {}
+pub trait PathBuf<'path, I>: Path<'path, I>
+where
+    I: PathIterator<'path>,
+{
+}
 
 // ===========================================================================
 // PathParts

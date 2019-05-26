@@ -26,8 +26,8 @@ use lazy_static::lazy_static;
 
 // Local imports
 use crate::path::{
-    AsSystemStr, Path, PathBuf, PathIterator, PathParts, PathPartsExt as _,
-    SystemStr, SystemString,
+    AsSystemStr, Path, PathBuf, PathParts, PathPartsExt as _, SystemStr,
+    SystemString,
 };
 
 // ===========================================================================
@@ -149,13 +149,7 @@ impl AsSystemStr for &WindowsPath {
     }
 }
 
-impl<'path> Path<'path> for &'path WindowsPath {
-    type Iter = Iter<'path>;
-
-    fn iter(&self) -> Iter<'path> {
-        Iter::new(&self.path)
-    }
-}
+impl<'path> Path<'path, Iter<'path>> for &'path WindowsPath {}
 
 impl<'path> Iterator for PathParts<'path, Iter<'path>> {
     type Item = OsString;
@@ -226,15 +220,9 @@ where
     }
 }
 
-impl<'path> Path<'path> for WindowsPathBuf {
-    type Iter = Iter<'path>;
+impl<'path> Path<'path, Iter<'path>> for WindowsPathBuf {}
 
-    fn iter(&'path self) -> Iter<'path> {
-        Iter::new(self.as_ref())
-    }
-}
-
-impl<'path> PathBuf<'path> for WindowsPathBuf {}
+impl<'path> PathBuf<'path, Iter<'path>> for WindowsPathBuf {}
 
 // ===========================================================================
 //

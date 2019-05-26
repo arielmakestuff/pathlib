@@ -23,8 +23,8 @@ use std::ops::Deref;
 // Local imports
 use crate::common::string::as_osstr;
 use crate::path::{
-    AsSystemStr, Path, PathBuf, PathIterator, PathParts, PathPartsExt as _,
-    SystemStr, SystemString,
+    AsSystemStr, Path, PathBuf, PathParts, PathPartsExt as _, SystemStr,
+    SystemString,
 };
 
 // ===========================================================================
@@ -96,13 +96,7 @@ impl AsSystemStr for &UnixPath {
     }
 }
 
-impl<'path> Path<'path> for &'path UnixPath {
-    type Iter = Iter<'path>;
-
-    fn iter(&self) -> Iter<'path> {
-        Iter::new(&self.path)
-    }
-}
+impl<'path> Path<'path, Iter<'path>> for &'path UnixPath {}
 
 impl<'path> Iterator for PathParts<'path, Iter<'path>> {
     type Item = OsString;
@@ -155,15 +149,9 @@ where
     }
 }
 
-impl<'path> Path<'path> for UnixPathBuf {
-    type Iter = Iter<'path>;
+impl<'path> Path<'path, Iter<'path>> for UnixPathBuf {}
 
-    fn iter(&'path self) -> Iter<'path> {
-        Iter::new(self.as_ref())
-    }
-}
-
-impl<'path> PathBuf<'path> for UnixPathBuf {}
+impl<'path> PathBuf<'path, Iter<'path>> for UnixPathBuf {}
 
 // ===========================================================================
 //

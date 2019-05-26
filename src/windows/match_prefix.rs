@@ -21,7 +21,7 @@ use crate::common::string::{as_osstr, as_str};
 // Helpers
 // ===========================================================================
 
-fn ascii_uppercase(letter: u8) -> u8 {
+pub(crate) fn ascii_uppercase(letter: u8) -> u8 {
     (letter as char).to_ascii_uppercase() as u8
 }
 

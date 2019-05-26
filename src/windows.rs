@@ -7,9 +7,13 @@
 // Modules
 // ===========================================================================
 
+// Private modules
 mod iter;
 mod match_prefix;
 mod path_type;
+
+#[cfg(feature = "parser-iter")]
+mod parser;
 
 // ===========================================================================
 // Imports

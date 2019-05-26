@@ -51,6 +51,12 @@ pub trait SystemSeq {
 
 pub trait SystemSeqBuf: SystemSeq {}
 
+pub trait PathIterator<'path>: Iterator {
+    fn new(path: &'path SystemStr) -> Self
+    where
+        Self: Sized;
+}
+
 pub trait Path<'path> {
     type Iter: Iterator + 'path;
 

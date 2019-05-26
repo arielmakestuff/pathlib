@@ -13,7 +13,7 @@ mod match_prefix;
 mod path_type;
 
 #[cfg(feature = "parser-iter")]
-mod parser;
+pub mod parser;
 
 // ===========================================================================
 // Imports

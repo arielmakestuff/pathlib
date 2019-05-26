@@ -10,9 +10,17 @@
 #[cfg(feature = "manual-iter")]
 mod manual;
 
+#[cfg(feature = "parser-iter")]
+mod parser;
+
 #[cfg(feature = "manual-iter")]
 mod iter_imports {
     pub use super::manual::{Iter, PathComponent, Prefix};
+}
+
+#[cfg(all(feature = "parser-iter", not(feature = "manual-iter")))]
+mod iter_imports {
+    pub use super::parser::{Iter, PathComponent, Prefix};
 }
 
 // ===========================================================================
@@ -34,12 +42,6 @@ use crate::path::SystemStr;
 
 pub use self::iter_imports::*;
 pub use std::path::Prefix;
-
-// ===========================================================================
-// Constants
-// ===========================================================================
-
-use super::SEPARATOR;
 
 // ===========================================================================
 // Iter

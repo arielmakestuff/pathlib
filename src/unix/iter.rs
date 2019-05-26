@@ -10,9 +10,17 @@
 #[cfg(feature = "manual-iter")]
 mod manual;
 
+#[cfg(feature = "parser-iter")]
+mod parser;
+
 #[cfg(feature = "manual-iter")]
 mod iter_imports {
     pub use super::manual::{Iter, PathComponent};
+}
+
+#[cfg(all(feature = "parser-iter", not(feature = "manual-iter")))]
+mod iter_imports {
+    pub use super::parser::{Iter, PathComponent};
 }
 
 // ===========================================================================

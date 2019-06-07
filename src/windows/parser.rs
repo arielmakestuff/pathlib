@@ -42,8 +42,6 @@ use crate::common::string::{as_osstr, ascii_uppercase};
 pub(crate) const RESTRICTED_NAME_ERRMSG: &str = "reserved name used";
 
 lazy_static! {
-    static ref PATH_COMPONENT: regex_bytes::Regex =
-        regex_bytes::Regex::new(r"[^\x00\x2f]*").unwrap();
     static ref DEVICE_REGEX: regex_bytes::Regex = {
         let regex = RESERVED_NAMES.iter().fold(String::new(), |mut s, name| {
             if !s.is_empty() {
@@ -69,10 +67,6 @@ lazy_static! {
     };
     static ref UNC_WORD: regex_bytes::Regex =
         { regex_bytes::Regex::new("(?i)UNC").unwrap() };
-    static ref SEP_REGEX: regex_bytes::Regex = {
-        let pattern = format!("[\\x{:02x}\\x{:02x}]", b'\\', b'/');
-        regex_bytes::Regex::new(pattern.as_str()).unwrap()
-    };
 }
 
 // ===========================================================================

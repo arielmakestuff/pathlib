@@ -21,6 +21,18 @@ use crate::unix::{Component, Iter, PathComponent};
 // Tests
 // ===========================================================================
 
+mod unixpathbuf {
+    use crate::path::{SystemSeq, SystemString};
+    use crate::unix::UnixPathBuf;
+
+    #[test]
+    fn deref_to_systemstring() {
+        let path = UnixPathBuf::new();
+        let inner: &SystemString = &path;
+        assert_eq!(inner.as_os_str().len(), 0);
+    }
+}
+
 mod public_export {
     use super::*;
     use crate::common::string::{as_osstr, as_str};

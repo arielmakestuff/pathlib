@@ -22,6 +22,18 @@ use crate::windows::{Component, Iter, PathComponent, PrefixComponent};
 // Tests
 // ===========================================================================
 
+mod windowspathbuf {
+    use crate::path::{SystemSeq, SystemString};
+    use crate::windows::WindowsPathBuf;
+
+    #[test]
+    fn deref_to_systemstring() {
+        let path = WindowsPathBuf::new();
+        let inner: &SystemString = &path;
+        assert_eq!(inner.as_os_str().len(), 0);
+    }
+}
+
 mod public_export {
     use super::*;
     use crate::common::string::{as_osstr, as_str};

@@ -254,17 +254,13 @@ where
             let file_name = file_name.0.unwrap();
 
             // Fail if the file name matches a reserved name
-            match String::from_utf8(file_name.0) {
+            let mut parser = device();
+            let file_device = parser.parse(&file_name.0[..]);
+            match file_device {
+                Ok(_) => unexpected_any(Info::Range(part))
+                    .message(RESTRICTED_NAME_ERRMSG)
+                    .right(),
                 Err(_) => ret,
-                Ok(s) => {
-                    if RESERVED_NAMES.contains(&s) {
-                        unexpected_any(Info::Range(part))
-                            .message(RESTRICTED_NAME_ERRMSG)
-                            .right()
-                    } else {
-                        ret
-                    }
-                }
             }
         }
     })

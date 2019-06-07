@@ -459,8 +459,11 @@ where
 
 #[cfg(test)]
 mod test {
+    use combine::Parser;
+
     mod file_name {
-        use crate::windows::parser::{file_name, Parser};
+        use super::*;
+        use crate::windows::parser::file_name;
 
         #[test]
         fn empty_filename() {
@@ -475,7 +478,8 @@ mod test {
     }
 
     mod prefix_verbatimunc {
-        use crate::windows::parser::{prefix_verbatimunc, Parser};
+        use super::*;
+        use crate::windows::parser::prefix_verbatimunc;
 
         #[test]
         fn simple_parse() {
@@ -484,6 +488,38 @@ mod test {
             let result = match parse_result {
                 Err(_) => false,
                 Ok(_) => true,
+            };
+            assert!(result);
+        }
+    }
+
+    mod prefix_devicens {
+        use super::*;
+        use crate::windows::iter::{Component, PrefixComponent};
+        use crate::windows::parser::prefix_devicens;
+        use std::ffi::OsStr;
+        use std::path::Prefix;
+
+        #[test]
+        fn simple_parse() {
+            let path = b"//./COM4";
+            let parse_result = prefix_devicens().parse(&path[..]);
+            let result = match parse_result {
+                Err(_) => false,
+                Ok((cur, rest)) => {
+                    let eof = rest.is_empty();
+                    let prefix_kind = Prefix::DeviceNS(OsStr::new("COM4"));
+                    let prefix_comp =
+                        PrefixComponent::new(&path[..], prefix_kind.clone());
+                    let (comp, len) = cur;
+                    let expected_len = len == path.len();
+                    match comp.unwrap() {
+                        Component::Prefix(c) => {
+                            c == prefix_comp && eof && expected_len
+                        }
+                        _ => false,
+                    }
+                }
             };
             assert!(result);
         }

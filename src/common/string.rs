@@ -35,6 +35,10 @@ pub(crate) fn os_str_as_bytes(s: &OsStr) -> &[u8] {
     unsafe { &*(s as *const OsStr as *const [u8]) }
 }
 
+pub(crate) fn ascii_uppercase(letter: u8) -> u8 {
+    (letter as char).to_ascii_uppercase() as u8
+}
+
 // ===========================================================================
 //
 // ===========================================================================

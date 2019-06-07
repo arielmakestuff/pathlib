@@ -31,10 +31,9 @@ use regex::bytes as regex_bytes;
 
 // Local imports
 use super::iter::{Component, PrefixComponent};
-use super::match_prefix::ascii_uppercase;
 use super::{RESERVED_NAMES, RESTRICTED_CHARS};
 use crate::common::error;
-use crate::common::string::as_osstr;
+use crate::common::string::{as_osstr, ascii_uppercase};
 
 // ===========================================================================
 // Globals

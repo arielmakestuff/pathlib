@@ -15,15 +15,7 @@ use std::path::Prefix;
 
 // Local imports
 use super::{path_type, SEPARATOR};
-use crate::common::string::{as_osstr, as_str};
-
-// ===========================================================================
-// Helpers
-// ===========================================================================
-
-pub(crate) fn ascii_uppercase(letter: u8) -> u8 {
-    (letter as char).to_ascii_uppercase() as u8
-}
+use crate::common::string::{as_osstr, as_str, ascii_uppercase};
 
 // ===========================================================================
 // Matcher functions

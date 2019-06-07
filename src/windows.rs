@@ -9,8 +9,10 @@
 
 // Private modules
 mod iter;
-mod match_prefix;
 mod path_type;
+
+#[cfg(feature = "manual-iter")]
+mod match_prefix;
 
 #[cfg(feature = "parser-iter")]
 pub mod parser;

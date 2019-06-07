@@ -349,17 +349,23 @@ where
     I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
-    let parser = || {
-        verbatim_start()
-            .with(letter().skip(byte(b':')).skip(look_ahead(separator())))
+    let parser = |consume_root| {
+        verbatim_start().with(letter().skip(byte(b':')).then(move |l| {
+            let ret = value(l);
+            if consume_root {
+                ret.skip(separator()).left()
+            } else {
+                ret.skip(look_ahead(separator())).right()
+            }
+        }))
     };
 
-    look_ahead(recognize(parser())).then(move |prefix| {
-        parser().map(move |disk| {
+    look_ahead(recognize(parser(true))).then(move |prefix| {
+        parser(false).map(move |disk| {
             let prefix_kind = Prefix::VerbatimDisk(disk);
             let comp =
                 Component::Prefix(PrefixComponent::new(prefix, prefix_kind));
-            (Ok(comp), prefix.len())
+            (Ok(comp), prefix.len() - 1)
         })
     })
 }

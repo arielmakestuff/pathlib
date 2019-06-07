@@ -473,6 +473,21 @@ mod test {
             assert!(result);
         }
     }
+
+    mod prefix_verbatimunc {
+        use crate::windows::parser::{prefix_verbatimunc, Parser};
+
+        #[test]
+        fn simple_parse() {
+            let path = b"//?/UNC/server/share";
+            let parse_result = prefix_verbatimunc().parse(&path[..]);
+            let result = match parse_result {
+                Err(_) => false,
+                Ok(_) => true,
+            };
+            assert!(result);
+        }
+    }
 }
 
 // ===========================================================================

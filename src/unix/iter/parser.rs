@@ -83,7 +83,10 @@ impl<'path> Iter<'path> {
         let remaining = &self.path[self.cur..];
         let result = component().easy_parse(remaining);
         match result {
-            Err(err) => Some(Err(into_error(self.path, self.cur, err))),
+            Err(err) => {
+                self.parse_state = PathParseState::Finish;
+                Some(Err(into_error(self.path, self.cur, err)))
+            }
             Ok(((comp, len), _)) => {
                 self.cur += len;
                 if self.cur < path_len {

@@ -197,9 +197,10 @@ where
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     file_parts().then(|parts| {
-        if parts.is_empty() {
+        let parts_len = parts.len();
+        if parts.is_empty() || (parts_len == 1 && parts[0].is_empty()) {
             value(None)
-        } else if parts.len() == 1 {
+        } else if parts_len == 1 {
             let last = *parts.last().unwrap();
             value(Some((last.to_vec(), &[][..])))
         } else {
@@ -450,6 +451,28 @@ where
             }
         }
     })
+}
+
+// ===========================================================================
+// Tests
+// ===========================================================================
+
+#[cfg(test)]
+mod test {
+    mod file_name {
+        use crate::windows::parser::{file_name, Parser};
+
+        #[test]
+        fn empty_filename() {
+            let name = b"";
+            let parse_result = file_name().parse(&name[..]);
+            let result = match parse_result {
+                Err(_) => false,
+                Ok((cur, _)) => cur.is_none(),
+            };
+            assert!(result);
+        }
+    }
 }
 
 // ===========================================================================

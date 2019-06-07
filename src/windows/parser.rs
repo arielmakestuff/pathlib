@@ -560,6 +560,32 @@ mod test {
         }
     }
 
+    mod prefix {
+        use super::*;
+        use crate::windows::parser::prefix;
+        use proptest::prelude::*;
+
+        proptest! {
+            #[test]
+            fn simple_parse(path in prop_oneof!(
+                    Just("//?/UNC/server/share"),
+                    Just("//?/C:/"),
+                    Just("//?/hello"),
+                    Just("//./COM4"),
+                    Just("//server/share"),
+                    Just("C:"),
+                    Just("C:/")
+                )
+            )
+            {
+                let path_str = path.to_owned();
+                let path = path_str.as_bytes();
+                let parse_result = prefix().parse(&path[..]);
+                assert!(parse_result.is_ok());
+            }
+        }
+    }
+
 }
 
 // ===========================================================================

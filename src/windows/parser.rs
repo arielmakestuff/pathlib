@@ -524,6 +524,42 @@ mod test {
             assert!(result);
         }
     }
+
+    mod prefix_unc {
+        use super::*;
+        use crate::windows::{
+            iter::{Component, PrefixComponent},
+            parser::prefix_unc,
+        };
+        use std::ffi::OsStr;
+        use std::path::Prefix;
+
+        #[test]
+        fn simple_parse() {
+            let path = b"//server/share";
+            let parse_result = prefix_unc().parse(&path[..]);
+            let result = match parse_result {
+                Err(_) => false,
+                Ok((cur, rest)) => {
+                    let prefix_kind =
+                        Prefix::UNC(OsStr::new("server"), OsStr::new("share"));
+                    let prefix_comp =
+                        PrefixComponent::new(&path[..], prefix_kind.clone());
+                    let (comp, len) = cur;
+                    match comp.unwrap() {
+                        Component::Prefix(c) => {
+                            c == prefix_comp
+                                && rest.is_empty()
+                                && len == path.len()
+                        }
+                        _ => unreachable!(),
+                    }
+                }
+            };
+            assert!(result);
+        }
+    }
+
 }
 
 // ===========================================================================

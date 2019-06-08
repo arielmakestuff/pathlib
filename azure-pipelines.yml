@@ -23,7 +23,11 @@ steps:
     displayName: Install Clippy
   - script: cargo clippy --all
     displayName: Run clippy
-  - script: cargo build --all
+  - script: cargo build --all --all-features
     displayName: Cargo build
-  - script: cargo test --all
-    displayName: Cargo test
+  - script: cargo test --all --all-features
+    displayName: Cargo test all features
+  - script: cargo test --all --no-default-features --features manual-iter
+    displayName: Cargo test manual-iter feature
+  - script: cargo test --all --no-default-features --features parser-iter
+    displayName: Cargo test parser-iter feature

@@ -27,3 +27,7 @@ version = "0.9"
 default-features = false
 # Enable all default features not known to break code coverage builds
 features = ["default-code-coverage"]
+
+[[bench]]
+name = "compare_iter"
+harness = false

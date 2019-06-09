@@ -19,3 +19,6 @@ kcov:
     cargo test --no-run
     EXEC_FILE=$(ls {{TARGET_DIR}}/debug/pathlib-* | sed '/[.]d$/d')
     kcov --include-path src --exclude-path src/test {{TARGET_DIR}}/cov $EXEC_FILE
+
+bench-feature-iter:
+    cargo bench --all-features --bench compare_iter

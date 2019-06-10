@@ -35,3 +35,7 @@ harness = false
 [[bench]]
 name = "compare_stdpath"
 harness = false
+
+[[bench]]
+name = "compare_unix_win_iter"
+harness = false

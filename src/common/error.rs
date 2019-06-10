@@ -14,6 +14,7 @@ use std::ffi::OsString;
 // Third-party imports
 
 // Local imports
+use crate::common::string::as_osstr;
 pub use crate::unix::UnixErrorKind;
 pub use crate::windows::WindowsErrorKind;
 
@@ -84,6 +85,54 @@ impl ParseError {
 impl Error for ParseError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         None
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct ErrorInfo<'path> {
+    kind: ParseErrorKind,
+    path: &'path [u8],
+    start: usize,
+    end: usize,
+    msg: &'static str,
+}
+
+impl<'path> ErrorInfo<'path> {
+    pub fn new(
+        kind: ParseErrorKind,
+        path: &'path [u8],
+        start: usize,
+        end: usize,
+        msg: &'static str,
+    ) -> ErrorInfo<'path> {
+        ErrorInfo {
+            kind,
+            path,
+            start,
+            end,
+            msg,
+        }
+    }
+
+    pub fn to_error(&self) -> ParseError {
+        let as_os_string = |path: &[u8]| OsString::from(as_osstr(path));
+
+        let start = self.start;
+        let end = self.end;
+        ParseError::new(
+            self.kind,
+            as_os_string(&self.path[start..end]),
+            as_os_string(&self.path[..]),
+            start,
+            end,
+            self.msg.to_owned(),
+        )
+    }
+}
+
+impl<'path> From<ErrorInfo<'path>> for ParseError {
+    fn from(info: ErrorInfo<'path>) -> ParseError {
+        info.to_error()
     }
 }
 

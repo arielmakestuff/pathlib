@@ -8,10 +8,10 @@
 // ===========================================================================
 
 #[cfg(feature = "manual-iter")]
-mod manual;
+pub mod manual;
 
 #[cfg(feature = "parser-iter")]
-mod parser;
+pub mod parser;
 
 #[cfg(feature = "manual-iter")]
 mod iter_imports {

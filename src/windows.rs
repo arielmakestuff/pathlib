@@ -8,7 +8,7 @@
 // ===========================================================================
 
 // Private modules
-mod iter;
+pub mod iter;
 mod path_type;
 
 #[cfg(feature = "manual-iter")]

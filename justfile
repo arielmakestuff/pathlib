@@ -2,6 +2,7 @@ TARGET_DIR := `cargo metadata --no-deps --format-version 1 | jq '.target_directo
 
 default_output := 'Html'
 default_feature := 'manual-iter'
+default_bench_name := 'compare_stdpath'
 
 test feature=default_feature:
     cargo test --all --no-default-features --features {{feature}}
@@ -22,3 +23,6 @@ kcov:
 
 bench-feature-iter:
     cargo bench --all-features --bench compare_iter
+
+bench name=default_bench_name:
+    cargo bench --bench {{name}}

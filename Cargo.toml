@@ -31,3 +31,7 @@ features = ["default-code-coverage"]
 [[bench]]
 name = "compare_iter"
 harness = false
+
+[[bench]]
+name = "compare_stdpath"
+harness = false

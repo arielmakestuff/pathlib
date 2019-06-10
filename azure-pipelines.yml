@@ -31,3 +31,6 @@ steps:
     displayName: Cargo test manual-iter feature
   - script: cargo test --all --no-default-features --features parser-iter
     displayName: Cargo test parser-iter feature
+  - script: cargo bench --bench compare_stdpath
+    displayName: Bench stdpath vs pathlib
+    condition: eq( variables['Agent.OS'], 'Windows_NT' )

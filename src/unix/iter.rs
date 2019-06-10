@@ -52,6 +52,7 @@ pub enum Component<'path> {
     CurDir,
     ParentDir,
     Normal(&'path OsStr),
+    Error,
 }
 
 impl<'path> Component<'path> {
@@ -61,6 +62,7 @@ impl<'path> Component<'path> {
             Component::CurDir => OsStr::new("."),
             Component::ParentDir => OsStr::new(".."),
             Component::Normal(comp) => comp,
+            Component::Error => unimplemented!(),
         }
     }
 }

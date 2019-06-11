@@ -18,7 +18,6 @@ use combine::{
 
 // Local imports
 use crate::common::error;
-use crate::common::string::as_osstr;
 use crate::path::{PathIterator, SystemStr};
 use crate::windows::iter::Component;
 use crate::windows::parser::{
@@ -30,7 +29,6 @@ use crate::windows::WindowsErrorKind;
 // Re-exports
 // ===========================================================================
 
-pub use crate::windows::parser::PathComponent;
 pub use std::path::Prefix;
 
 // ===========================================================================
@@ -44,6 +42,61 @@ enum PathParseState {
     Root,
     PathComponent,
     Finish,
+}
+
+// ===========================================================================
+// Helpers
+// ===========================================================================
+
+fn make_error<'path, I, R>(
+    path: &'path [u8],
+    start: usize,
+    parse_error: Errors<I, R, PointerOffset>,
+) -> error::ErrorInfo {
+    let path_comp = &path[start..];
+
+    let err = parse_error.map_position(|p| p.translate_position(path_comp));
+    let err_position = err.position;
+    let pos = start + err_position;
+    let mut msg = "";
+
+    let errkind = {
+        use easy::Error::*;
+        use stream::easy::Info::*;
+
+        let mut ret = WindowsErrorKind::InvalidCharacter;
+        for e in err.errors {
+            match e {
+                Message(Borrowed(errmsg))
+                    if errmsg == RESTRICTED_NAME_ERRMSG =>
+                {
+                    msg = errmsg;
+                    ret = WindowsErrorKind::RestrictedName;
+                    break;
+                }
+                Message(Borrowed(errmsg)) | Unexpected(Borrowed(errmsg)) => {
+                    msg = errmsg;
+                    break;
+                }
+                _ => {}
+            }
+        }
+
+        ret
+    };
+
+    let kind = error::ParseErrorKind::Windows(errkind);
+
+    // the returned tuple is (found, rest) where found is the part of the input
+    // that matches and the rest is the remaining part of the input that's
+    // unparsed
+    let rest = valid_part_char()
+        .parse(path_comp)
+        .expect("should not fail")
+        .0;
+    let end = start + rest.len();
+
+    error::ErrorInfo::new(kind, path, start, end, pos, msg)
 }
 
 // ===========================================================================
@@ -69,16 +122,16 @@ impl<'path> PathIterator<'path> for Iter<'path> {
 }
 
 impl<'path> Iter<'path> {
-    fn parse_prefix(&mut self) -> Option<PathComponent<'path>> {
+    fn parse_prefix(&mut self) -> Option<Component<'path>> {
         // This case will only happen if the input path is empty
         if self.path.is_empty() {
             self.parse_state = PathParseState::PathComponent;
-            return Some(Ok(Component::CurDir));
+            return Some(Component::CurDir);
         }
 
         let mut ret = None;
         if let Ok((found, _)) = prefix().easy_parse(self.path) {
-            if let (Ok(Component::Prefix(_)), end) = found {
+            if let (Component::Prefix(_), end) = found {
                 self.cur = end;
                 ret = Some(found.0);
             }
@@ -92,7 +145,7 @@ impl<'path> Iter<'path> {
         }
     }
 
-    fn parse_root(&mut self) -> Option<PathComponent<'path>> {
+    fn parse_root(&mut self) -> Option<Component<'path>> {
         self.parse_state = PathParseState::Root;
         let path = &self.path[self.cur..];
 
@@ -104,7 +157,7 @@ impl<'path> Iter<'path> {
         }
     }
 
-    fn parse_component(&mut self) -> Option<PathComponent<'path>> {
+    fn parse_component(&mut self) -> Option<Component<'path>> {
         let end = self.path.len();
         let cur = self.cur;
 
@@ -123,7 +176,8 @@ impl<'path> Iter<'path> {
             }
             Err(err) => {
                 self.parse_state = PathParseState::Finish;
-                Some(Err(self.make_error(self.cur, err)))
+                let err = make_error(self.path, self.cur, err);
+                Some(Component::Error(err))
             }
         };
 
@@ -135,66 +189,6 @@ impl<'path> Iter<'path> {
         ret
     }
 
-    fn make_error<I, R>(
-        &self,
-        start: usize,
-        parse_error: Errors<I, R, PointerOffset>,
-    ) -> error::ParseError {
-        let path = &self.path[..];
-        let path_comp = &path[start..];
-
-        let err = parse_error.map_position(|p| p.translate_position(path_comp));
-        let err_position = err.position;
-        let mut msg =
-            format!("Parse error at position {}: ", start + err_position);
-
-        let errkind = {
-            use easy::Error::*;
-            use stream::easy::Info::*;
-
-            let mut ret = WindowsErrorKind::InvalidCharacter;
-            for e in err.errors {
-                match e {
-                    Message(Borrowed(errmsg))
-                        if errmsg == RESTRICTED_NAME_ERRMSG =>
-                    {
-                        msg.push_str(errmsg);
-                        ret = WindowsErrorKind::RestrictedName;
-                        break;
-                    }
-                    Message(Borrowed(errmsg))
-                    | Unexpected(Borrowed(errmsg)) => {
-                        msg.push_str(errmsg);
-                        break;
-                    }
-                    _ => {}
-                }
-            }
-
-            ret
-        };
-
-        let kind = error::ParseErrorKind::Windows(errkind);
-
-        // the returned tuple is (found, rest) where found is the part of the input
-        // that matches and the rest is the remaining part of the input that's
-        // unparsed
-        let rest = valid_part_char()
-            .parse(path_comp)
-            .expect("should not fail")
-            .0;
-        let end = start + rest.len();
-
-        error::ParseError::new(
-            kind,
-            as_osstr(&rest[..]).into(),
-            as_osstr(path).into(),
-            start,
-            end,
-            msg,
-        )
-    }
-
     #[allow(dead_code)]
     #[cfg(test)]
     pub fn current_index(&self) -> usize {
@@ -203,9 +197,9 @@ impl<'path> Iter<'path> {
 }
 
 impl<'path> Iterator for Iter<'path> {
-    type Item = PathComponent<'path>;
+    type Item = Component<'path>;
 
-    fn next(&mut self) -> Option<PathComponent<'path>> {
+    fn next(&mut self) -> Option<Component<'path>> {
         match self.parse_state {
             PathParseState::Start => self.parse_prefix(),
             PathParseState::Prefix => self.parse_root(),

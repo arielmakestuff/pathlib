@@ -23,7 +23,7 @@ use std::path::Prefix;
 // Local imports
 use crate::common::error::*;
 use crate::path::{PathIterator, SystemStr};
-use crate::windows::{Component, Iter, PathComponent, PrefixComponent};
+use crate::windows::{Component, Iter, PrefixComponent};
 
 // ===========================================================================
 // Tests
@@ -137,16 +137,16 @@ mod iter {
         let path = br"\\?\C:\hello";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
-        let comp: Vec<PathComponent> = iter.collect();
+        let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 3);
 
-        let expected: Vec<PathComponent<'path>> = vec![
-            Ok(Component::Prefix(PrefixComponent::new(
+        let expected: Vec<Component<'path>> = vec![
+            Component::Prefix(PrefixComponent::new(
                 br"\\?\C:\",
                 Prefix::VerbatimDisk(b'C'),
-            ))),
-            Ok(Component::RootDir(OsStr::new(r"\"))),
-            Ok(Component::Normal(OsStr::new(r"hello"))),
+            )),
+            Component::RootDir(OsStr::new(r"\")),
+            Component::Normal(OsStr::new(r"hello")),
         ];
 
         assert_eq!(comp, expected);
@@ -157,12 +157,12 @@ mod iter {
         let path = br"C:";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
-        let comp: Vec<PathComponent> = iter.collect();
+        let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 1);
 
-        let expected: Vec<PathComponent<'path>> = vec![Ok(Component::Prefix(
+        let expected: Vec<Component<'path>> = vec![Component::Prefix(
             PrefixComponent::new(br"C:", Prefix::Disk(b'C')),
-        ))];
+        )];
 
         assert_eq!(comp, expected);
     }
@@ -172,28 +172,28 @@ mod iter {
         let path = br"C:\hello.";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
-        let comp: Vec<PathComponent> = iter.collect();
+        let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 3);
 
-        let expected_ok: Vec<PathComponent<'path>> = vec![
-            Ok(Component::Prefix(PrefixComponent::new(
-                br"C:",
-                Prefix::Disk(b'C'),
-            ))),
-            Ok(Component::RootDir(OsStr::new(r"\"))),
+        let expected_ok: Vec<Component<'path>> = vec![
+            Component::Prefix(PrefixComponent::new(br"C:", Prefix::Disk(b'C'))),
+            Component::RootDir(OsStr::new(r"\")),
         ];
 
         assert_eq!(&comp[..2], &expected_ok[..]);
 
         // Check last element is an error
         let result = match &comp[2] {
-            Ok(_) => false,
-            Err(e) => match e.kind() {
-                ParseErrorKind::Windows(WindowsErrorKind::InvalidCharacter) => {
-                    true
+            Component::Error(info) => {
+                let err = ParseError::from(info);
+                match err.kind() {
+                    ParseErrorKind::Windows(
+                        WindowsErrorKind::InvalidCharacter,
+                    ) => true,
+                    _ => false,
                 }
-                _ => false,
-            },
+            }
+            _ => false,
         };
 
         assert!(result);
@@ -204,16 +204,16 @@ mod iter {
         let path = br"\\?\hello\world";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
-        let comp: Vec<PathComponent> = iter.collect();
+        let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 3);
 
-        let expected: Vec<PathComponent<'path>> = vec![
-            Ok(Component::Prefix(PrefixComponent::new(
+        let expected: Vec<Component<'path>> = vec![
+            Component::Prefix(PrefixComponent::new(
                 br"\\?\hello",
                 Prefix::Verbatim(OsStr::new(r"hello")),
-            ))),
-            Ok(Component::RootDir(OsStr::new(r"\"))),
-            Ok(Component::Normal(OsStr::new(r"world"))),
+            )),
+            Component::RootDir(OsStr::new(r"\")),
+            Component::Normal(OsStr::new(r"world")),
         ];
 
         assert_eq!(comp, expected);
@@ -233,7 +233,7 @@ mod iter {
         // iterating over the path
         let iter = Iter::new(SystemStr::from_bytes(path));
 
-        let comp: Vec<PathComponent> = iter.collect();
+        let comp: Vec<Component> = iter.collect();
 
         // --------------------
         // THEN
@@ -245,25 +245,28 @@ mod iter {
         // the error is a ParseErrorKind::RestrictedName kind
         assert_eq!(comp.len(), 3);
 
-        let expected_ok: Vec<PathComponent<'path>> = vec![
-            Ok(Component::Prefix(PrefixComponent::new(
+        let expected_ok: Vec<Component<'path>> = vec![
+            Component::Prefix(PrefixComponent::new(
                 br"\\?\hello",
                 Prefix::Verbatim(OsStr::new(r"hello")),
-            ))),
-            Ok(Component::RootDir(OsStr::new(r"\"))),
+            )),
+            Component::RootDir(OsStr::new(r"\")),
         ];
 
         assert_eq!(&comp[..2], &expected_ok[..]);
 
         // Check last element is an error
         let result = match &comp[2] {
-            Ok(_) => false,
-            Err(e) => match e.kind() {
-                ParseErrorKind::Windows(WindowsErrorKind::RestrictedName) => {
-                    true
+            Component::Error(info) => {
+                let err = ParseError::from(info);
+                match err.kind() {
+                    ParseErrorKind::Windows(
+                        WindowsErrorKind::RestrictedName,
+                    ) => true,
+                    _ => false,
                 }
-                _ => false,
-            },
+            }
+            _ => false,
         };
 
         assert!(result);
@@ -274,12 +277,12 @@ mod iter {
         let path = br"hello\world";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
-        let comp: Vec<PathComponent> = iter.collect();
+        let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 2);
 
-        let expected: Vec<PathComponent<'path>> = vec![
-            Ok(Component::Normal(OsStr::new(r"hello"))),
-            Ok(Component::Normal(OsStr::new(r"world"))),
+        let expected: Vec<Component<'path>> = vec![
+            Component::Normal(OsStr::new(r"hello")),
+            Component::Normal(OsStr::new(r"world")),
         ];
 
         assert_eq!(comp, expected);
@@ -290,13 +293,13 @@ mod iter {
         let path = br"hello\\world";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
-        let comp: Vec<PathComponent> = iter.collect();
+        let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 3);
 
-        let expected: Vec<PathComponent<'path>> = vec![
-            Ok(Component::Normal(OsStr::new(r"hello"))),
-            Ok(Component::CurDir),
-            Ok(Component::Normal(OsStr::new(r"world"))),
+        let expected: Vec<Component<'path>> = vec![
+            Component::Normal(OsStr::new(r"hello")),
+            Component::CurDir,
+            Component::Normal(OsStr::new(r"world")),
         ];
 
         assert_eq!(comp, expected);
@@ -307,15 +310,15 @@ mod iter {
         let path = br"hello\world\.\what\now";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
-        let comp: Vec<PathComponent> = iter.collect();
+        let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 5);
 
-        let expected: Vec<PathComponent<'path>> = vec![
-            Ok(Component::Normal(OsStr::new(r"hello"))),
-            Ok(Component::Normal(OsStr::new(r"world"))),
-            Ok(Component::CurDir),
-            Ok(Component::Normal(OsStr::new(r"what"))),
-            Ok(Component::Normal(OsStr::new(r"now"))),
+        let expected: Vec<Component<'path>> = vec![
+            Component::Normal(OsStr::new(r"hello")),
+            Component::Normal(OsStr::new(r"world")),
+            Component::CurDir,
+            Component::Normal(OsStr::new(r"what")),
+            Component::Normal(OsStr::new(r"now")),
         ];
 
         assert_eq!(comp, expected);
@@ -326,15 +329,15 @@ mod iter {
         let path = br"hello\world\..\what\now";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
-        let comp: Vec<PathComponent> = iter.collect();
+        let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 5);
 
-        let expected: Vec<PathComponent<'path>> = vec![
-            Ok(Component::Normal(OsStr::new(r"hello"))),
-            Ok(Component::Normal(OsStr::new(r"world"))),
-            Ok(Component::ParentDir),
-            Ok(Component::Normal(OsStr::new(r"what"))),
-            Ok(Component::Normal(OsStr::new(r"now"))),
+        let expected: Vec<Component<'path>> = vec![
+            Component::Normal(OsStr::new(r"hello")),
+            Component::Normal(OsStr::new(r"world")),
+            Component::ParentDir,
+            Component::Normal(OsStr::new(r"what")),
+            Component::Normal(OsStr::new(r"now")),
         ];
 
         assert_eq!(comp, expected);
@@ -345,13 +348,13 @@ mod iter {
         let path = br".\hello\world";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
-        let comp: Vec<PathComponent> = iter.collect();
+        let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 3);
 
-        let expected: Vec<PathComponent<'path>> = vec![
-            Ok(Component::CurDir),
-            Ok(Component::Normal(OsStr::new(r"hello"))),
-            Ok(Component::Normal(OsStr::new(r"world"))),
+        let expected: Vec<Component<'path>> = vec![
+            Component::CurDir,
+            Component::Normal(OsStr::new(r"hello")),
+            Component::Normal(OsStr::new(r"world")),
         ];
 
         assert_eq!(comp, expected);
@@ -362,13 +365,13 @@ mod iter {
         let path = br"..\hello\world\";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
-        let comp: Vec<PathComponent> = iter.collect();
+        let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 3);
 
-        let expected: Vec<PathComponent<'path>> = vec![
-            Ok(Component::ParentDir),
-            Ok(Component::Normal(OsStr::new(r"hello"))),
-            Ok(Component::Normal(OsStr::new(r"world"))),
+        let expected: Vec<Component<'path>> = vec![
+            Component::ParentDir,
+            Component::Normal(OsStr::new(r"hello")),
+            Component::Normal(OsStr::new(r"world")),
         ];
 
         assert_eq!(comp, expected);
@@ -379,16 +382,16 @@ mod iter {
         let path = br"hello\world/what\now/brown/cow";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
-        let comp: Vec<PathComponent> = iter.collect();
+        let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 6);
 
-        let expected: Vec<PathComponent<'path>> = vec![
-            Ok(Component::Normal(OsStr::new(r"hello"))),
-            Ok(Component::Normal(OsStr::new(r"world"))),
-            Ok(Component::Normal(OsStr::new(r"what"))),
-            Ok(Component::Normal(OsStr::new(r"now"))),
-            Ok(Component::Normal(OsStr::new(r"brown"))),
-            Ok(Component::Normal(OsStr::new(r"cow"))),
+        let expected: Vec<Component<'path>> = vec![
+            Component::Normal(OsStr::new(r"hello")),
+            Component::Normal(OsStr::new(r"world")),
+            Component::Normal(OsStr::new(r"what")),
+            Component::Normal(OsStr::new(r"now")),
+            Component::Normal(OsStr::new(r"brown")),
+            Component::Normal(OsStr::new(r"cow")),
         ];
 
         assert_eq!(comp, expected);
@@ -399,8 +402,8 @@ mod iter {
         let path = b"";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
-        let comp: Vec<PathComponent> = iter.collect();
-        let expected: Vec<PathComponent<'path>> = vec![Ok(Component::CurDir)];
+        let comp: Vec<Component> = iter.collect();
+        let expected: Vec<Component<'path>> = vec![Component::CurDir];
 
         assert_eq!(comp, expected);
     }

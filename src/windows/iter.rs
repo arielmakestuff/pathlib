@@ -15,12 +15,12 @@ pub mod parser;
 
 #[cfg(feature = "manual-iter")]
 mod iter_imports {
-    pub use super::manual::{Iter, PathComponent, Prefix};
+    pub use super::manual::{Iter, Prefix};
 }
 
 #[cfg(all(feature = "parser-iter", not(feature = "manual-iter")))]
 mod iter_imports {
-    pub use super::parser::{Iter, PathComponent, Prefix};
+    pub use super::parser::{Iter, Prefix};
 }
 
 // ===========================================================================
@@ -33,7 +33,7 @@ use std::ffi::OsStr;
 // Third-party imports
 
 // Local imports
-use crate::common::string::as_osstr;
+use crate::common::{error::ErrorInfo, string::as_osstr};
 use crate::path::SystemStr;
 
 // ===========================================================================
@@ -54,7 +54,7 @@ pub enum Component<'path> {
     CurDir,
     ParentDir,
     Normal(&'path OsStr),
-    Error,
+    Error(ErrorInfo<'path>),
 }
 
 impl<'path> Component<'path> {
@@ -65,7 +65,7 @@ impl<'path> Component<'path> {
             Component::CurDir => OsStr::new("."),
             Component::ParentDir => OsStr::new(".."),
             Component::Normal(comp) => comp,
-            Component::Error => unimplemented!(),
+            Component::Error(_) => unimplemented!(),
         }
     }
 }

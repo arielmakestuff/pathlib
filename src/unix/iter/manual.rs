@@ -18,33 +18,17 @@
 // ===========================================================================
 
 // Stdlib imports
-use std::ffi::OsString;
 
 // Third-party imports
 
 // Local imports
 use super::Component;
-use crate::common::error::ParseError;
-use crate::common::string::as_osstr;
+use crate::common::error::ErrorInfo;
 use crate::path::{PathIterator, SystemStr};
 use crate::unix::{
     path_type::{Null, Separator},
     PathParseState, UnixErrorKind,
 };
-
-// ===========================================================================
-// Types
-// ===========================================================================
-
-pub type PathComponent<'path> = Result<Component<'path>, ParseError>;
-
-// ===========================================================================
-// Helpers
-// ===========================================================================
-
-fn as_os_string(path: &[u8]) -> OsString {
-    OsString::from(as_osstr(path))
-}
 
 // ===========================================================================
 // Iter
@@ -68,12 +52,11 @@ impl<'path> PathIterator<'path> for Iter<'path> {
 }
 
 impl<'path> Iter<'path> {
-    // unix_iter_body!(PathComponent<'path>, Component<'path>);
-    fn parse_root(&mut self) -> Option<PathComponent<'path>> {
+    fn parse_root(&mut self) -> Option<Component<'path>> {
         // This case will only happen if the input path is empty
         if self.cur == self.path.len() {
             self.parse_state = PathParseState::PathComponent;
-            return Some(Ok(Component::CurDir));
+            return Some(Component::CurDir);
         }
 
         self.parse_state = PathParseState::Root;
@@ -82,13 +65,13 @@ impl<'path> Iter<'path> {
         if Separator == self.path[self.cur] {
             self.cur += 1;
             let ret = Component::RootDir;
-            return Some(Ok(ret));
+            return Some(ret);
         }
 
         self.parse_component()
     }
 
-    fn parse_component(&mut self) -> Option<PathComponent<'path>> {
+    fn parse_component(&mut self) -> Option<Component<'path>> {
         let end = self.path.len();
         let cur = self.cur;
 
@@ -107,7 +90,7 @@ impl<'path> Iter<'path> {
             } else if Separator == cur_char {
                 let part_len = i - cur;
                 let comp = if part_len == 0 {
-                    Ok(Component::CurDir)
+                    Component::CurDir
                 } else {
                     self.build_comp(cur, i, has_invalid_char)
                 };
@@ -137,33 +120,29 @@ impl<'path> Iter<'path> {
         start: usize,
         end: usize,
         found_err: bool,
-    ) -> Result<Component<'path>, ParseError> {
+    ) -> Component<'path> {
         if found_err {
             self.invalid_char(start, end)
         } else {
-            Ok(Component::from(&self.path[start..end]))
+            Component::from(&self.path[start..end])
         }
     }
 
-    fn invalid_char(
-        &mut self,
-        start: usize,
-        end: usize,
-    ) -> Result<Component<'path>, ParseError> {
+    fn invalid_char(&mut self, start: usize, end: usize) -> Component<'path> {
         // Return None for every call to next() after this
         self.parse_state = PathParseState::Finish;
 
-        let msg = String::from("path component contains an invalid character");
-        let err = ParseError::new(
+        let msg = "path component contains an invalid character";
+        let err = ErrorInfo::new(
             UnixErrorKind::InvalidCharacter.into(),
-            as_os_string(&self.path[start..end]),
-            as_os_string(&self.path[..]),
+            self.path,
             start,
             end,
+            start,
             msg,
         );
 
-        Err(err)
+        Component::Error(err)
     }
 
     #[cfg(test)]
@@ -173,9 +152,9 @@ impl<'path> Iter<'path> {
 }
 
 impl<'path> Iterator for Iter<'path> {
-    type Item = PathComponent<'path>;
+    type Item = Component<'path>;
 
-    fn next(&mut self) -> Option<PathComponent<'path>> {
+    fn next(&mut self) -> Option<Component<'path>> {
         match self.parse_state {
             PathParseState::Start => self.parse_root(),
             PathParseState::Root | PathParseState::PathComponent => {

@@ -8,13 +8,13 @@
 // ===========================================================================
 
 // Stdlib imports
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsStr;
 
 // Third-party imports
 
 // Local imports
 use super::{Component, PrefixComponent};
-use crate::common::error::ParseError;
+use crate::common::error::ErrorInfo;
 use crate::common::string::{as_osstr, as_str};
 use crate::path::{PathIterator, SystemStr};
 use crate::windows::{
@@ -42,8 +42,6 @@ enum PathParseState {
     Finish,
 }
 
-pub type PathComponent<'path> = Result<Component<'path>, ParseError>;
-
 // ===========================================================================
 // Iter
 // ===========================================================================
@@ -66,7 +64,7 @@ impl<'path> PathIterator<'path> for Iter<'path> {
 }
 
 impl<'path> Iter<'path> {
-    fn parse_prefix(&mut self) -> Option<PathComponent<'path>> {
+    fn parse_prefix(&mut self) -> Option<Component<'path>> {
         let mut verbatimdisk = false;
         let mut ret = None;
         if let Some((end, prefix)) = match_prefix(self.path) {
@@ -76,7 +74,7 @@ impl<'path> Iter<'path> {
             let prefix_comp = PrefixComponent::new(&self.path[..end], prefix);
             self.cur = end;
 
-            ret = Some(Ok(Component::Prefix(prefix_comp)));
+            ret = Some(Component::Prefix(prefix_comp));
         }
 
         self.parse_state = PathParseState::Prefix { verbatimdisk };
@@ -88,15 +86,12 @@ impl<'path> Iter<'path> {
         self.parse_root(verbatimdisk)
     }
 
-    fn parse_root(
-        &mut self,
-        verbatimdisk: bool,
-    ) -> Option<PathComponent<'path>> {
+    fn parse_root(&mut self, verbatimdisk: bool) -> Option<Component<'path>> {
         let path_len = self.path.len();
         let cur = self.cur;
         if path_len == 0 {
             self.parse_state = PathParseState::PathComponent;
-            return Some(Ok(Component::CurDir));
+            return Some(Component::CurDir);
         } else if cur == path_len {
             self.parse_state = PathParseState::Finish;
             return None;
@@ -113,13 +108,13 @@ impl<'path> Iter<'path> {
             let end = self.cur;
             let start = end - 1;
             let ret = Component::RootDir(as_osstr(&self.path[start..end]));
-            return Some(Ok(ret));
+            return Some(ret);
         }
 
         self.parse_component()
     }
 
-    fn parse_component(&mut self) -> Option<PathComponent<'path>> {
+    fn parse_component(&mut self) -> Option<Component<'path>> {
         let end = self.path.len();
         let cur = self.cur;
 
@@ -134,7 +129,7 @@ impl<'path> Iter<'path> {
             if SEPARATOR.contains(cur_char) {
                 let part = &self.path[cur..i];
                 let comp = if part.is_empty() {
-                    Ok(Component::CurDir)
+                    Component::CurDir
                 } else {
                     self.build_comp(cur, i)
                 };
@@ -159,11 +154,7 @@ impl<'path> Iter<'path> {
         }
     }
 
-    fn build_comp(
-        &mut self,
-        start: usize,
-        end: usize,
-    ) -> Result<Component<'path>, ParseError> {
+    fn build_comp(&mut self, start: usize, end: usize) -> Component<'path> {
         let part = &self.path[start..end];
         if part != NonDevicePart {
             if part == Device {
@@ -173,56 +164,37 @@ impl<'path> Iter<'path> {
             }
         } else {
             let comp_str = as_str(part);
-            let ret = match comp_str {
+            match comp_str {
                 "." => Component::CurDir,
                 ".." => Component::ParentDir,
                 _ => Component::Normal(OsStr::new(comp_str)),
-            };
-            Ok(ret)
+            }
         }
     }
 
-    fn invalid_name(
-        &mut self,
-        start: usize,
-        end: usize,
-    ) -> Result<Component<'path>, ParseError> {
-        // Return None for every call to next() after this
-        self.parse_state = PathParseState::Finish;
-
-        let msg = String::from("component uses a restricted name");
+    fn invalid_name(&mut self, start: usize, end: usize) -> Component<'path> {
+        let msg = "component uses a restricted name";
         self.build_error(WindowsErrorKind::RestrictedName, start, end, msg)
     }
 
-    fn invalid_char(
-        &mut self,
-        start: usize,
-        end: usize,
-    ) -> Result<Component<'path>, ParseError> {
-        // Return None for every call to next() after this
-        self.parse_state = PathParseState::Finish;
-        let msg = String::from("path component contains an invalid character");
+    fn invalid_char(&mut self, start: usize, end: usize) -> Component<'path> {
+        let msg = "path component contains an invalid character";
         self.build_error(WindowsErrorKind::InvalidCharacter, start, end, msg)
     }
 
     fn build_error(
-        &self,
+        &mut self,
         kind: WindowsErrorKind,
         start: usize,
         end: usize,
-        msg: String,
-    ) -> Result<Component<'path>, ParseError> {
-        let part = as_str(&self.path[start..end]);
-        let err = ParseError::new(
-            kind.into(),
-            OsString::from(part),
-            OsString::from(as_str(self.path)),
-            self.cur,
-            self.cur + part.len(),
-            msg,
-        );
+        msg: &'static str,
+    ) -> Component<'path> {
+        // Return None for every call to next() after this
+        self.parse_state = PathParseState::Finish;
 
-        Err(err)
+        let err =
+            ErrorInfo::new(kind.into(), self.path, start, end, start, msg);
+        Component::Error(err)
     }
 
     #[cfg(test)]
@@ -232,9 +204,9 @@ impl<'path> Iter<'path> {
 }
 
 impl<'path> Iterator for Iter<'path> {
-    type Item = PathComponent<'path>;
+    type Item = Component<'path>;
 
-    fn next(&mut self) -> Option<PathComponent<'path>> {
+    fn next(&mut self) -> Option<Component<'path>> {
         match self.parse_state {
             PathParseState::Start => self.parse_prefix(),
             PathParseState::Prefix { verbatimdisk } => {

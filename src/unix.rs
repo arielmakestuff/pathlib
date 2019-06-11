@@ -33,7 +33,7 @@ use crate::path::{
 // Re-exports
 // ===========================================================================
 
-pub use self::iter::{Component, Iter, PathComponent};
+pub use self::iter::{Component, Iter};
 
 // ===========================================================================
 // Types needed for Iter
@@ -97,7 +97,7 @@ impl<'path> Iterator for PathParts<'path, Iter<'path>> {
 
     fn next(&mut self) -> Option<OsString> {
         match self.path_iter().next() {
-            Some(Ok(c)) => Some(c.as_os_str().to_os_string()),
+            Some(c) => Some(c.as_os_str().to_os_string()),
             _ => None,
         }
     }

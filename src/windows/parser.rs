@@ -32,7 +32,6 @@ use regex::bytes as regex_bytes;
 // Local imports
 use super::iter::{Component, PrefixComponent};
 use super::{RESERVED_NAMES, RESTRICTED_CHARS};
-use crate::common::error;
 use crate::common::string::{as_osstr, ascii_uppercase};
 
 // ===========================================================================
@@ -70,12 +69,6 @@ lazy_static! {
 }
 
 // ===========================================================================
-// Types
-// ===========================================================================
-
-pub type PathComponent<'path> = Result<Component<'path>, error::ParseError>;
-
-// ===========================================================================
 // General parsers
 // ===========================================================================
 
@@ -87,16 +80,15 @@ where
     choice!(attempt(range(&b"\\"[..])), attempt(range(&b"/"[..])))
 }
 
-pub fn root<'a, I>(
-) -> impl Parser<Input = I, Output = (PathComponent<'a>, usize)>
+pub fn root<'a, I>() -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
     I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
-    separator().map(|sep| (Ok(Component::RootDir(as_osstr(sep))), sep.len()))
+    separator().map(|sep| (Component::RootDir(as_osstr(sep)), sep.len()))
 }
 
-fn curdir<'a, I>() -> impl Parser<Input = I, Output = (PathComponent<'a>, usize)>
+fn curdir<'a, I>() -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
     I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
@@ -104,11 +96,10 @@ where
     let sep = choice!(attempt(separator().map(|_| ())), attempt(eof()));
     range(&b"."[..])
         .skip(look_ahead(sep))
-        .map(|part: &'a [u8]| (Ok(Component::CurDir), part.len()))
+        .map(|part: &'a [u8]| (Component::CurDir, part.len()))
 }
 
-fn parentdir<'a, I>(
-) -> impl Parser<Input = I, Output = (PathComponent<'a>, usize)>
+fn parentdir<'a, I>() -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
     I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
@@ -116,7 +107,7 @@ where
     let sep = choice!(attempt(separator().map(|_| ())), attempt(eof()));
     range(&b".."[..])
         .skip(look_ahead(sep))
-        .map(|part: &'a [u8]| (Ok(Component::ParentDir), part.len()))
+        .map(|part: &'a [u8]| (Component::ParentDir, part.len()))
 }
 
 // ===========================================================================
@@ -302,7 +293,7 @@ where
 // ===========================================================================
 
 fn prefix_verbatim<'a, I>(
-) -> impl Parser<Input = I, Output = (PathComponent<'a>, usize)>
+) -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
     I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
@@ -314,13 +305,13 @@ where
             let prefix_kind = Prefix::Verbatim(as_osstr(part));
             let comp =
                 Component::Prefix(PrefixComponent::new(prefix, prefix_kind));
-            (Ok(comp), prefix.len())
+            (comp, prefix.len())
         })
     })
 }
 
 fn prefix_verbatimunc<'a, I>(
-) -> impl Parser<Input = I, Output = (PathComponent<'a>, usize)>
+) -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
     I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
@@ -332,13 +323,13 @@ where
                 Prefix::VerbatimUNC(as_osstr(server), as_osstr(share));
             let comp =
                 Component::Prefix(PrefixComponent::new(prefix, prefix_kind));
-            (Ok(comp), prefix.len())
+            (comp, prefix.len())
         })
     })
 }
 
 fn prefix_verbatimdisk<'a, I>(
-) -> impl Parser<Input = I, Output = (PathComponent<'a>, usize)>
+) -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
     I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
@@ -359,13 +350,13 @@ where
             let prefix_kind = Prefix::VerbatimDisk(disk);
             let comp =
                 Component::Prefix(PrefixComponent::new(prefix, prefix_kind));
-            (Ok(comp), prefix.len() - 1)
+            (comp, prefix.len() - 1)
         })
     })
 }
 
 fn prefix_devicens<'a, I>(
-) -> impl Parser<Input = I, Output = (PathComponent<'a>, usize)>
+) -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
     I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
@@ -381,13 +372,12 @@ where
             let prefix_kind = Prefix::DeviceNS(as_osstr(device));
             let comp =
                 Component::Prefix(PrefixComponent::new(prefix, prefix_kind));
-            (Ok(comp), prefix.len())
+            (comp, prefix.len())
         })
     })
 }
 
-fn prefix_unc<'a, I>(
-) -> impl Parser<Input = I, Output = (PathComponent<'a>, usize)>
+fn prefix_unc<'a, I>() -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
     I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
@@ -399,25 +389,24 @@ where
             let prefix_kind = Prefix::UNC(server, share);
             let comp =
                 Component::Prefix(PrefixComponent::new(prefix, prefix_kind));
-            (Ok(comp), prefix.len())
+            (comp, prefix.len())
         })
     })
 }
 
 fn prefix_disk<'a, I>(
-) -> impl Parser<Input = I, Output = (PathComponent<'a>, usize)>
+) -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
     I: RangeStream<Item = u8, Range = &'a [u8]>,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     recognize(letter().and(byte(b':'))).map(|disk: &'a [u8]| {
         let prefix = Prefix::Disk(ascii_uppercase(disk[0]));
-        (Ok(Component::Prefix(PrefixComponent::new(disk, prefix))), 2)
+        (Component::Prefix(PrefixComponent::new(disk, prefix)), 2)
     })
 }
 
-pub fn prefix<'a, I>(
-) -> impl Parser<Input = I, Output = (PathComponent<'a>, usize)>
+pub fn prefix<'a, I>() -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
     I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
@@ -433,7 +422,7 @@ where
 }
 
 pub fn component<'a, I>(
-) -> impl Parser<Input = I, Output = (PathComponent<'a>, usize)>
+) -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
     I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
@@ -441,13 +430,13 @@ where
     let sep = choice!(attempt(separator().map(|_| ())), attempt(eof()));
     nondevice_part().skip(sep).map(|comp| {
         if comp.is_empty() {
-            (Ok(Component::CurDir), 0)
+            (Component::CurDir, 0)
         } else {
             let len = comp.len();
             match comp {
-                b"." => (Ok(Component::CurDir), len),
-                b".." => (Ok(Component::ParentDir), len),
-                _ => (Ok(Component::Normal(as_osstr(comp))), len),
+                b"." => (Component::CurDir, len),
+                b".." => (Component::ParentDir, len),
+                _ => (Component::Normal(as_osstr(comp)), len),
             }
         }
     })
@@ -514,7 +503,7 @@ mod test {
                         PrefixComponent::new(&path[..], prefix_kind.clone());
                     let (comp, len) = cur;
                     let expected_len = len == path.len();
-                    match comp.unwrap() {
+                    match comp {
                         Component::Prefix(c) => {
                             c == prefix_comp && eof && expected_len
                         }
@@ -547,7 +536,7 @@ mod test {
                     let prefix_comp =
                         PrefixComponent::new(&path[..], prefix_kind.clone());
                     let (comp, len) = cur;
-                    match comp.unwrap() {
+                    match comp {
                         Component::Prefix(c) => {
                             c == prefix_comp
                                 && rest.is_empty()

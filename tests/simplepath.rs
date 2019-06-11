@@ -29,7 +29,7 @@ mod path_type {
     fn new_unixpathbuf() {
         let path = UnixPathBuf::new();
         let comp: Vec<_> = path.iter().collect();
-        let expected = vec![Ok(UnixComponent::CurDir)];
+        let expected = vec![UnixComponent::CurDir];
 
         assert_eq!(comp, expected);
     }
@@ -46,7 +46,7 @@ mod path_type {
     fn new_windowspathbuf() {
         let path = WindowsPathBuf::new();
         let comp: Vec<_> = path.iter().collect();
-        let expected = vec![Ok(WindowsComponent::CurDir)];
+        let expected = vec![WindowsComponent::CurDir];
 
         assert_eq!(comp, expected);
     }
@@ -70,11 +70,11 @@ mod iter {
         let comp: Vec<_> = path.iter().collect();
 
         let expected = vec![
-            Ok(UnixComponent::RootDir),
-            Ok(UnixComponent::Normal(OsStr::new("hello"))),
-            Ok(UnixComponent::Normal(OsStr::new("world"))),
-            Ok(UnixComponent::Normal(OsStr::new("greetings"))),
-            Ok(UnixComponent::Normal(OsStr::new("planet"))),
+            UnixComponent::RootDir,
+            UnixComponent::Normal(OsStr::new("hello")),
+            UnixComponent::Normal(OsStr::new("world")),
+            UnixComponent::Normal(OsStr::new("greetings")),
+            UnixComponent::Normal(OsStr::new("planet")),
         ];
 
         assert_eq!(comp, expected);
@@ -86,15 +86,15 @@ mod iter {
         let comp: Vec<_> = path.iter().collect();
 
         let expected = vec![
-            Ok(WindowsComponent::Prefix(PrefixComponent::new(
+            WindowsComponent::Prefix(PrefixComponent::new(
                 b"C:",
                 Prefix::Disk(b'C'),
-            ))),
-            Ok(WindowsComponent::RootDir(OsStr::new(r"/"))),
-            Ok(WindowsComponent::Normal(OsStr::new("hello"))),
-            Ok(WindowsComponent::Normal(OsStr::new("world"))),
-            Ok(WindowsComponent::Normal(OsStr::new("greetings"))),
-            Ok(WindowsComponent::Normal(OsStr::new("planet"))),
+            )),
+            WindowsComponent::RootDir(OsStr::new(r"/")),
+            WindowsComponent::Normal(OsStr::new("hello")),
+            WindowsComponent::Normal(OsStr::new("world")),
+            WindowsComponent::Normal(OsStr::new("greetings")),
+            WindowsComponent::Normal(OsStr::new("planet")),
         ];
 
         assert_eq!(comp, expected);
@@ -106,11 +106,11 @@ mod iter {
         let comp: Vec<_> = path.iter().collect();
 
         let expected = vec![
-            Ok(UnixComponent::RootDir),
-            Ok(UnixComponent::Normal(OsStr::new("hello"))),
-            Ok(UnixComponent::Normal(OsStr::new("world"))),
-            Ok(UnixComponent::Normal(OsStr::new("greetings"))),
-            Ok(UnixComponent::Normal(OsStr::new("planet"))),
+            UnixComponent::RootDir,
+            UnixComponent::Normal(OsStr::new("hello")),
+            UnixComponent::Normal(OsStr::new("world")),
+            UnixComponent::Normal(OsStr::new("greetings")),
+            UnixComponent::Normal(OsStr::new("planet")),
         ];
 
         assert_eq!(comp, expected);
@@ -122,15 +122,15 @@ mod iter {
         let comp: Vec<_> = path.iter().collect();
 
         let expected = vec![
-            Ok(WindowsComponent::Prefix(PrefixComponent::new(
+            WindowsComponent::Prefix(PrefixComponent::new(
                 b"C:",
                 Prefix::Disk(b'C'),
-            ))),
-            Ok(WindowsComponent::RootDir(OsStr::new(r"/"))),
-            Ok(WindowsComponent::Normal(OsStr::new("hello"))),
-            Ok(WindowsComponent::Normal(OsStr::new("world"))),
-            Ok(WindowsComponent::Normal(OsStr::new("greetings"))),
-            Ok(WindowsComponent::Normal(OsStr::new("planet"))),
+            )),
+            WindowsComponent::RootDir(OsStr::new(r"/")),
+            WindowsComponent::Normal(OsStr::new("hello")),
+            WindowsComponent::Normal(OsStr::new("world")),
+            WindowsComponent::Normal(OsStr::new("greetings")),
+            WindowsComponent::Normal(OsStr::new("planet")),
         ];
 
         assert_eq!(comp, expected);

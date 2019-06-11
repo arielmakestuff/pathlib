@@ -40,7 +40,7 @@ use crate::path::{
 // Re-exports
 // ===========================================================================
 
-pub use self::iter::{Component, Iter, PathComponent, Prefix, PrefixComponent};
+pub use self::iter::{Component, Iter, Prefix, PrefixComponent};
 
 // ===========================================================================
 // Constants
@@ -153,13 +153,13 @@ impl<'path> Iterator for PathParts<'path, Iter<'path>> {
         }
 
         match self.path_iter().next() {
-            Some(Ok(c @ Component::Prefix(_))) => {
+            Some(c @ Component::Prefix(_)) => {
                 let mut cur = c.as_os_str().to_os_string();
                 match self.path_iter().next() {
-                    Some(Ok(c @ Component::RootDir(_))) => {
+                    Some(c @ Component::RootDir(_)) => {
                         cur.push(c.as_os_str().to_os_string());
                     }
-                    Some(Ok(c)) => {
+                    Some(c) => {
                         self.stored_item()
                             .replace(c.as_os_str().to_os_string());
                     }
@@ -167,7 +167,7 @@ impl<'path> Iterator for PathParts<'path, Iter<'path>> {
                 }
                 Some(cur)
             }
-            Some(Ok(c)) => Some(c.as_os_str().to_os_string()),
+            Some(c) => Some(c.as_os_str().to_os_string()),
             _ => None,
         }
     }

@@ -21,12 +21,6 @@ use crate::unix::{
 };
 
 // ===========================================================================
-// Re-exports
-// ===========================================================================
-
-pub use crate::unix::parser::PathComponent;
-
-// ===========================================================================
 // Iter
 // ===========================================================================
 
@@ -49,11 +43,11 @@ impl<'path> PathIterator<'path> for Iter<'path> {
 }
 
 impl<'path> Iter<'path> {
-    fn parse_root(&mut self) -> Option<PathComponent<'path>> {
+    fn parse_root(&mut self) -> Option<Component<'path>> {
         // This case will only happen if the input path is empty
         if self.path.is_empty() {
             self.parse_state = PathParseState::PathComponent;
-            return Some(Ok(Component::CurDir));
+            return Some(Component::CurDir);
         }
 
         self.parse_state = PathParseState::Root;
@@ -68,7 +62,7 @@ impl<'path> Iter<'path> {
         }
     }
 
-    fn parse_component(&mut self) -> Option<PathComponent<'path>> {
+    fn parse_component(&mut self) -> Option<Component<'path>> {
         let path_len = self.path.len();
         if self.cur == path_len {
             self.parse_state = PathParseState::Finish;
@@ -85,7 +79,8 @@ impl<'path> Iter<'path> {
         match result {
             Err(err) => {
                 self.parse_state = PathParseState::Finish;
-                Some(Err(into_error(self.path, self.cur, err)))
+                let err = into_error(self.path, self.cur, err);
+                Some(Component::Error(err))
             }
             Ok(((comp, len), _)) => {
                 self.cur += len;
@@ -108,10 +103,9 @@ impl<'path> Iter<'path> {
 }
 
 impl<'path> Iterator for Iter<'path> {
-    // unix_iter_iterator_body!(PathComponent<'path>);
-    type Item = PathComponent<'path>;
+    type Item = Component<'path>;
 
-    fn next(&mut self) -> Option<PathComponent<'path>> {
+    fn next(&mut self) -> Option<Component<'path>> {
         match self.parse_state {
             PathParseState::Start => self.parse_root(),
             PathParseState::Root | PathParseState::PathComponent => {

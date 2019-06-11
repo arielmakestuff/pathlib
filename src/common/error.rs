@@ -94,6 +94,7 @@ pub struct ErrorInfo<'path> {
     path: &'path [u8],
     start: usize,
     end: usize,
+    pos: usize,
     msg: &'static str,
 }
 
@@ -103,6 +104,7 @@ impl<'path> ErrorInfo<'path> {
         path: &'path [u8],
         start: usize,
         end: usize,
+        pos: usize,
         msg: &'static str,
     ) -> ErrorInfo<'path> {
         ErrorInfo {
@@ -110,6 +112,7 @@ impl<'path> ErrorInfo<'path> {
             path,
             start,
             end,
+            pos,
             msg,
         }
     }

@@ -117,7 +117,7 @@ impl<'path> ErrorInfo<'path> {
         }
     }
 
-    pub fn to_error(&self) -> ParseError {
+    fn build_error(&self, msg: String) -> ParseError {
         let as_os_string = |path: &[u8]| OsString::from(as_osstr(path));
 
         let start = self.start;
@@ -128,8 +128,12 @@ impl<'path> ErrorInfo<'path> {
             as_os_string(&self.path[..]),
             start,
             end,
-            self.msg.to_owned(),
+            msg,
         )
+    }
+
+    pub fn to_error(&self) -> ParseError {
+        self.build_error(self.msg.to_owned())
     }
 }
 

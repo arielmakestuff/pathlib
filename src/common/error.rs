@@ -135,6 +135,13 @@ impl<'path> ErrorInfo<'path> {
     pub fn to_error(&self) -> ParseError {
         self.build_error(self.msg.to_owned())
     }
+
+    pub fn with_errmsg<F>(&self, f: F) -> ParseError
+    where
+        F: Fn(&Self) -> String,
+    {
+        self.build_error(f(self))
+    }
 }
 
 impl<'path> From<ErrorInfo<'path>> for ParseError {

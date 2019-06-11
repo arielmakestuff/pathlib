@@ -144,8 +144,8 @@ impl<'path> ErrorInfo<'path> {
     }
 }
 
-impl<'path> From<ErrorInfo<'path>> for ParseError {
-    fn from(info: ErrorInfo<'path>) -> ParseError {
+impl<'path> From<&ErrorInfo<'path>> for ParseError {
+    fn from(info: &ErrorInfo<'path>) -> ParseError {
         info.to_error()
     }
 }

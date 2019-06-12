@@ -82,17 +82,19 @@ impl<'path> Iter<'path> {
 
         let mut ret = None;
         let mut has_invalid_char = false;
+        let mut err_pos = cur;
         for i in cur..end {
             let cur_char = self.path[i];
             if Null == cur_char {
                 // The null character is not allowed in unix filenames
                 has_invalid_char = true;
+                err_pos = i;
             } else if Separator == cur_char {
                 let part_len = i - cur;
                 let comp = if part_len == 0 {
                     Component::CurDir
                 } else {
-                    self.build_comp(cur, i, has_invalid_char)
+                    self.build_comp(cur, i, has_invalid_char, err_pos)
                 };
                 ret = Some(comp);
                 self.cur = i + 1;
@@ -108,7 +110,7 @@ impl<'path> Iter<'path> {
         match ret {
             Some(_) => ret,
             None => {
-                let comp = self.build_comp(cur, end, has_invalid_char);
+                let comp = self.build_comp(cur, end, has_invalid_char, err_pos);
                 self.cur = end;
                 Some(comp)
             }
@@ -120,15 +122,21 @@ impl<'path> Iter<'path> {
         start: usize,
         end: usize,
         found_err: bool,
+        err_pos: usize,
     ) -> Component<'path> {
         if found_err {
-            self.invalid_char(start, end)
+            self.invalid_char(start, end, err_pos)
         } else {
             Component::from(&self.path[start..end])
         }
     }
 
-    fn invalid_char(&mut self, start: usize, end: usize) -> Component<'path> {
+    fn invalid_char(
+        &mut self,
+        start: usize,
+        end: usize,
+        err_pos: usize,
+    ) -> Component<'path> {
         // Return None for every call to next() after this
         self.parse_state = PathParseState::Finish;
 
@@ -138,7 +146,7 @@ impl<'path> Iter<'path> {
             self.path,
             start,
             end,
-            start,
+            err_pos,
             msg,
         );
 

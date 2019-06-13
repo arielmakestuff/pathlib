@@ -27,7 +27,7 @@ mod parts {
         let path = UnixPath::new("/a/unix/path");
         let expected: Vec<OsString> = ["/", "a", "unix", "path"]
             .iter()
-            .map(|s| OsString::from(s))
+            .map(OsString::from)
             .collect();
 
         let parts: Vec<OsString> = path.parts().collect();
@@ -40,7 +40,7 @@ mod parts {
         let path = WindowsPath::new(r"C:\a\windows\path");
         let expected: Vec<OsString> = [r"C:\", "a", "windows", "path"]
             .iter()
-            .map(|s| OsString::from(s))
+            .map(OsString::from)
             .collect();
 
         let parts: Vec<OsString> = path.parts().collect();
@@ -53,7 +53,7 @@ mod parts {
         let path = WindowsPath::new(r"C:a\windows\path");
         let expected: Vec<OsString> = ["C:", "a", "windows", "path"]
             .iter()
-            .map(|s| OsString::from(s))
+            .map(OsString::from)
             .collect();
 
         let parts: Vec<OsString> = path.parts().collect();
@@ -66,7 +66,7 @@ mod parts {
         let path = WindowsPath::new(r"\a\windows\path");
         let expected: Vec<OsString> = [r"\", "a", "windows", "path"]
             .iter()
-            .map(|s| OsString::from(s))
+            .map(OsString::from)
             .collect();
 
         let parts: Vec<OsString> = path.parts().collect();

@@ -14,17 +14,55 @@ use std::path::Prefix;
 // Third-party imports
 
 // Local imports
-use super::{path_type, SEPARATOR};
-use crate::common::string::{as_osstr, as_str, ascii_uppercase};
+use super::{path_type, WindowsErrorKind, RESTRICTED_CHARS, SEPARATOR};
+use crate::common::{
+    error::ErrorInfo,
+    string::{as_osstr, as_str, ascii_uppercase},
+};
+
+// ===========================================================================
+// Globals
+// ===========================================================================
+
+const INVALID_CHAR_ERRMSG: &str = "path prefix contains an invalid character";
+
+// ===========================================================================
+// Types
+// ===========================================================================
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum Match<'path> {
+    Prefix(usize, Prefix<'path>),
+    Error(ErrorInfo<'path>),
+    None,
+}
+
+// ===========================================================================
+// Helpers
+// ===========================================================================
+
+fn map_err_pos<'path>(
+    kind: WindowsErrorKind,
+    path: &'path [u8],
+    start: usize,
+    end: usize,
+    err_pos: Option<usize>,
+    msg: &'static str,
+) -> Option<ErrorInfo<'path>> {
+    err_pos.map_or(None, |err_pos| {
+        let err = ErrorInfo::new(kind.into(), path, start, end, err_pos, msg);
+        Some(err)
+    })
+}
 
 // ===========================================================================
 // Matcher functions
 // ===========================================================================
 
-pub fn match_prefix(path: &[u8]) -> Option<(usize, Prefix)> {
+pub fn match_prefix(path: &[u8]) -> Match {
     let end = 2;
     if path.len() < end {
-        return None;
+        return Match::None;
     }
 
     let part = &path[..end];
@@ -36,100 +74,135 @@ pub fn match_prefix(path: &[u8]) -> Option<(usize, Prefix)> {
 }
 
 // Endpoint (from prefix)
-fn match_disk(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
+fn match_disk(path: &[u8], first: usize) -> Match {
     let part = &path[..first];
 
     if part == path_type::Disk {
         let letter = ascii_uppercase(part[0]);
-        Some((first, Prefix::Disk(letter)))
+        Match::Prefix(first, Prefix::Disk(letter))
     } else {
-        None
+        Match::None
     }
 }
 
 // from prefix
-fn match_doubleslash(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
+fn match_doubleslash(path: &[u8], first: usize) -> Match {
     let end = first + 2;
     if path.len() < end {
-        return None;
+        return Match::None;
     }
 
     let next_two = &path[first..end];
     if next_two == path_type::DotSlash {
         match_devicens(path, end)
     } else if next_two == path_type::QuestionSlash {
-        type Method = fn(&[u8], usize) -> Option<(usize, Prefix)>;
+        type Method = fn(&[u8], usize) -> Match;
         let match_funcs: [Method; 3] =
             [match_verbatimunc, match_verbatimdisk, match_verbatim];
 
         for f in match_funcs.iter() {
             let result = f(path, end);
-            if result.is_some() {
-                return result;
+            match result {
+                Match::Prefix(_, _) | Match::Error(_) => {
+                    return result;
+                }
+                _ => {}
             }
         }
 
-        None
+        Match::None
     } else {
         match_unc(path, first)
     }
 }
 
-fn match_verbatim(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
+fn match_verbatim(path: &[u8], first: usize) -> Match {
     let mut end = path.len();
+    let mut err_pos = None;
 
     for (i, c) in path[first..end].iter().enumerate() {
+        let last = first + i;
         if SEPARATOR.contains(c) {
-            end = i + first;
+            end = last;
             break;
+        } else if err_pos.is_none() && RESTRICTED_CHARS.contains(c) {
+            err_pos = Some(last);
         }
+    }
+
+    let ret = map_err_pos(
+        WindowsErrorKind::InvalidCharacter,
+        path,
+        first,
+        end,
+        err_pos,
+        INVALID_CHAR_ERRMSG,
+    );
+    if let Some(err) = ret {
+        return Match::Error(err);
     }
 
     let part = &path[first..end];
     if part == path_type::NonUNCPart {
         let strval = as_str(part);
         let val = OsStr::new(strval);
-        Some((end, Prefix::Verbatim(val)))
+        Match::Prefix(end, Prefix::Verbatim(val))
     } else {
-        None
+        Match::None
     }
 }
 
-fn match_verbatimdisk(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
+fn match_verbatimdisk(path: &[u8], first: usize) -> Match {
     let end = first + 3;
     if path.len() < end {
-        return None;
+        return Match::None;
     }
 
     let part = &path[first..end];
     if part == path_type::DiskRoot {
         let letter = ascii_uppercase(path[first]);
-        Some((end, Prefix::VerbatimDisk(letter)))
+        Match::Prefix(end, Prefix::VerbatimDisk(letter))
     } else {
-        None
+        Match::None
     }
 }
 
 // endpoint (from match_doubleslash)
-fn match_unc(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
+fn match_unc(path: &[u8], first: usize) -> Match {
     let end = path.len();
 
     let mut sep_index: Vec<usize> = Vec::with_capacity(2);
+    let mut err_pos = None;
     for (i, c) in path[first..end].iter().enumerate() {
+        let last = first + i;
         if SEPARATOR.contains(c) {
-            sep_index.push(i + first);
+            sep_index.push(last);
             if sep_index.len() == 2 {
                 break;
             }
+        } else if err_pos.is_none() && RESTRICTED_CHARS.contains(c) {
+            err_pos = Some(last);
         }
     }
 
     let num_sep = sep_index.len();
     if num_sep == 0 {
-        return None;
+        return Match::None;
     }
 
     let last = if num_sep == 1 { end } else { sep_index[1] };
+
+    let ret = map_err_pos(
+        WindowsErrorKind::InvalidCharacter,
+        path,
+        first,
+        last,
+        err_pos,
+        INVALID_CHAR_ERRMSG,
+    );
+    if let Some(err) = ret {
+        return Match::Error(err);
+    }
 
     let part = &path[first..last];
     if part == path_type::ServerShare {
@@ -138,51 +211,68 @@ fn match_unc(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
 
         let (server_val, share_val) = (as_osstr(server), as_osstr(share));
         let prefix = Prefix::UNC(server_val, share_val);
-        Some((last, prefix))
+        Match::Prefix(last, prefix)
     } else {
-        None
+        Match::None
     }
 }
 
 // endpoint (from match_doubleslash)
-fn match_verbatimunc(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
+fn match_verbatimunc(path: &[u8], first: usize) -> Match {
     let part_end = first + 4;
     if path.len() < part_end {
-        return None;
+        return Match::None;
     }
 
     let unc_part = &path[first..part_end];
 
     if unc_part != path_type::UNCRootPart {
-        return None;
+        return Match::None;
     }
 
     let result = match_unc(path, part_end);
-    if let Some((p, Prefix::UNC(server, share))) = result {
-        Some((p, Prefix::VerbatimUNC(server, share)))
-    } else {
-        result
+    match result {
+        Match::Prefix(p, Prefix::UNC(server, share)) => {
+            Match::Prefix(p, Prefix::VerbatimUNC(server, share))
+        }
+        _ => result,
     }
 }
 
 // Endpoint (from match_doubleslash)
-fn match_devicens(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
+fn match_devicens(path: &[u8], first: usize) -> Match {
     let mut end = path.len();
 
     // Get all bytes until first separator
+    let mut err_pos = None;
     for (i, c) in path[first..end].iter().enumerate() {
+        let last = first + i;
         if SEPARATOR.contains(c) {
-            end = i + first;
+            end = last;
             break;
+        } else if err_pos.is_none() && RESTRICTED_CHARS.contains(c) {
+            err_pos = Some(last);
         }
+    }
+
+    let ret = map_err_pos(
+        WindowsErrorKind::InvalidCharacter,
+        path,
+        first,
+        end,
+        err_pos,
+        INVALID_CHAR_ERRMSG,
+    );
+    if let Some(err) = ret {
+        return Match::Error(err);
     }
 
     let part = &path[first..end];
     if part == path_type::DeviceNamespace {
         let prefix = Prefix::DeviceNS(as_osstr(part));
-        Some((end, prefix))
+        Match::Prefix(end, prefix)
     } else {
-        None
+        Match::None
     }
 }
 
@@ -193,7 +283,7 @@ fn match_devicens(path: &[u8], first: usize) -> Option<(usize, Prefix)> {
 #[cfg(test)]
 #[cfg_attr(tarpaulin, skip)]
 mod test {
-    use crate::windows::match_prefix::match_prefix;
+    use crate::windows::match_prefix::{match_prefix, Match};
     use crate::windows::path_type;
     use std::ffi::OsStr;
     use std::path::Prefix;
@@ -216,26 +306,26 @@ mod test {
         #[test]
         fn empty_string() {
             let value = match_prefix(b"");
-            assert_eq!(value, None);
+            assert_eq!(value, Match::None);
         }
 
         #[test]
         fn doubleslash() {
             let value = match_prefix(br#"\\"#);
-            assert_eq!(value, None);
+            assert_eq!(value, Match::None);
         }
 
         #[test]
         fn empty_verbatim() {
             let value = match_prefix(br#"\\?\"#);
-            assert_eq!(value, None);
+            assert_eq!(value, Match::None);
         }
 
         // string without any separator characters is not a unc prefix
         #[test]
         fn unc_noseparator() {
             let value = match_prefix(br#"\\helloworld"#);
-            assert_eq!(value, None);
+            assert_eq!(value, Match::None);
         }
 
         // string with a server and separator but without a share is not a unc
@@ -243,19 +333,19 @@ mod test {
         #[test]
         fn unc_not_servershare() {
             let value = match_prefix(br#"\\helloworld\"#);
-            assert_eq!(value, None);
+            assert_eq!(value, Match::None);
         }
 
         #[test]
         fn verbatimunc_no_separator() {
             let value = match_prefix(br#"\\?\UNC\helloworld"#);
-            assert_eq!(value, None);
+            assert_eq!(value, Match::None);
         }
 
         #[test]
         fn devicens_no_device() {
             let value = match_prefix(br#"\\.\"#);
-            assert_eq!(value, None);
+            assert_eq!(value, Match::None);
         }
     }
 
@@ -288,8 +378,7 @@ mod test {
             //     and the Prefix::Verbatim contains the first component
             //     following \\?\
             let result = match value {
-                None => false,
-                Some((index, prefix)) => {
+                Match::Prefix(index, prefix) => {
                     let res = &pathstr[..index] == br#"\\?\hello"#;
                     match prefix {
                         Prefix::Verbatim(comp) => {
@@ -298,6 +387,7 @@ mod test {
                         _ => false,
                     }
                 }
+                _ => false,
             };
             assert!(result);
         }
@@ -343,7 +433,7 @@ mod test {
                 // the value's second element is a Prefix::Verbatim
                 //     containing only the first path component
                 let result = match value {
-                    Some((end, p)) => {
+                    Match::Prefix(end, p) => {
                         let path_comp = OsStr::new(&comp[0][..]);
                         &path[..end] == &expected_path[..]
                             && p == Prefix::Verbatim(path_comp)
@@ -384,8 +474,7 @@ mod test {
             //     and the Prefix::Verbatim contains the first component
             //     following \\?\
             let result = match value {
-                None => false,
-                Some((index, prefix)) => {
+                Match::Prefix(index, prefix) => {
                     let res = &pathstr[..index] == br#"\\?\UNC\hello\again"#;
                     match prefix {
                         Prefix::VerbatimUNC(server, share) => {
@@ -395,6 +484,7 @@ mod test {
                         _ => false,
                     }
                 }
+                _ => false,
             };
             assert!(result);
         }
@@ -460,15 +550,14 @@ mod test {
                 // the value's second element is a Prefix::VerbatimUNC
                 //     containing only the server and share path components
                 let result = match value {
-                    Some((end, p)) => {
+                    Match::Prefix(end, p) => {
                         let comp_server = OsStr::new(&server[..]);
                         let comp_share = OsStr::new(&share[..]);
                         let expected = Prefix::VerbatimUNC(
                             comp_server,
                             comp_share
                         );
-                        &path[..end] == &expected_path[..]
-                            && p == expected
+                        path[..end] == expected_path[..] && p == expected
                     }
                     _ => false,
                 };
@@ -506,14 +595,14 @@ mod test {
             //     and the Prefix::VerbatimDisk contains the disk letter
             //     following \\?\
             let result = match value {
-                None => false,
-                Some((index, prefix)) => {
+                Match::Prefix(index, prefix) => {
                     let res = &pathstr[..index] == br#"\\?\C:\"#;
                     match prefix {
                         Prefix::VerbatimDisk(drive) => res && drive == b'C',
                         _ => false,
                     }
                 }
+                _ => false,
             };
             assert!(result);
         }
@@ -567,11 +656,10 @@ mod test {
                 // the value's second element is a Prefix::VerbatimDisk
                 //     containing only the disk letter path component
                 let result = match value {
-                    Some((end, p)) => {
+                    Match::Prefix(end, p) => {
                         let comp_disk = disk_upper.as_bytes()[0];
                         let expected = Prefix::VerbatimDisk(comp_disk);
-                        &path[..end] == expected_path
-                            && p == expected
+                        path[..end] == expected_path && p == expected
                     }
                     _ => false,
                 };
@@ -611,8 +699,7 @@ mod test {
             //     and the Prefix::DeviceNS contains the device name
             //     following \\.\
             let result = match value {
-                None => false,
-                Some((index, prefix)) => {
+                Match::Prefix(index, prefix) => {
                     let res = &pathstr[..index] == br#"\\.\NUL"#;
                     match prefix {
                         Prefix::DeviceNS(device) => {
@@ -621,6 +708,7 @@ mod test {
                         _ => false,
                     }
                 }
+                _ => false,
             };
             assert!(result);
         }
@@ -690,11 +778,10 @@ mod test {
                 // the value's second element is a Prefix::DeviceNS
                 //     containing only the device file name component
                 let result = match value {
-                    Some((end, p)) => {
+                    Match::Prefix(end, p) => {
                         let comp_device = OsStr::new(device.as_str());
                         let expected = Prefix::DeviceNS(comp_device);
-                        &path[..end] == expected_path
-                            && p == expected
+                        path[..end] == expected_path && p == expected
                     }
                     _ => false,
                 };
@@ -732,8 +819,7 @@ mod test {
             //     and the Prefix::UNC contains the server and share
             //     components folloing \\
             let result = match value {
-                None => false,
-                Some((index, prefix)) => {
+                Match::Prefix(index, prefix) => {
                     let res = &pathstr[..index] == br#"\\hello\world"#;
                     match prefix {
                         Prefix::UNC(server, share) => {
@@ -743,6 +829,7 @@ mod test {
                         _ => false,
                     }
                 }
+                _ => false,
             };
             assert!(result);
         }
@@ -808,15 +895,14 @@ mod test {
                 // the value's second element is a Prefix::UNC
                 //     containing only the server and share path components
                 let result = match value {
-                    Some((end, p)) => {
+                    Match::Prefix(end, p) => {
                         let comp_server = OsStr::new(&server[..]);
                         let comp_share = OsStr::new(&share[..]);
                         let expected = Prefix::UNC(
                             comp_server,
                             comp_share
                         );
-                        &path[..end] == &expected_path[..]
-                            && p == expected
+                        path[..end] == expected_path[..] && p == expected
                     }
                     _ => false,
                 };
@@ -853,14 +939,14 @@ mod test {
             // the 2-tuple's second element is a Prefix::Disk
             //     and the Prefix::Disk contains the disk letter
             let result = match value {
-                None => false,
-                Some((index, prefix)) => {
+                Match::Prefix(index, prefix) => {
                     let res = &pathstr[..index] == br#"C:"#;
                     match prefix {
                         Prefix::Disk(drive) => res && drive == b'C',
                         _ => false,
                     }
                 }
+                _ => false,
             };
             assert!(result);
         }
@@ -918,11 +1004,10 @@ mod test {
                 // the value's second element is a Prefix::Disk
                 //     containing only the disk letter path component
                 let result = match value {
-                    Some((end, p)) => {
+                    Match::Prefix(end, p) => {
                         let comp_disk = disk_upper.as_bytes()[0];
                         let expected = Prefix::Disk(comp_disk);
-                        &path[..end] == expected_path
-                            && p == expected
+                        path[..end] == expected_path && p == expected
                     }
                     _ => false,
                 };

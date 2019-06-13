@@ -8,19 +8,18 @@
 // ===========================================================================
 
 // Stdlib imports
-use std::ffi::OsStr;
 
 // Third-party imports
 
 // Local imports
 use super::{Component, PrefixComponent};
 use crate::common::error::ErrorInfo;
-use crate::common::string::{as_osstr, as_str};
+use crate::common::string::as_osstr;
 use crate::path::{PathIterator, SystemStr};
 use crate::windows::{
-    match_prefix::match_prefix,
-    path_type::{Device, NonDevicePart},
-    WindowsErrorKind, SEPARATOR,
+    match_prefix::{match_prefix, Match},
+    path_type::Device,
+    WindowsErrorKind, RESTRICTED_CHARS, SEPARATOR,
 };
 
 // ===========================================================================
@@ -66,18 +65,26 @@ impl<'path> PathIterator<'path> for Iter<'path> {
 impl<'path> Iter<'path> {
     fn parse_prefix(&mut self) -> Option<Component<'path>> {
         let mut verbatimdisk = false;
-        let mut ret = None;
-        if let Some((end, prefix)) = match_prefix(self.path) {
-            if let Prefix::VerbatimDisk(_) = prefix {
-                verbatimdisk = true;
+        let ret = match match_prefix(self.path) {
+            Match::Prefix(end, prefix) => {
+                if let Prefix::VerbatimDisk(_) = prefix {
+                    verbatimdisk = true;
+                }
+                let prefix_comp =
+                    PrefixComponent::new(&self.path[..end], prefix);
+                self.cur = end;
+
+                Some(Component::Prefix(prefix_comp))
             }
-            let prefix_comp = PrefixComponent::new(&self.path[..end], prefix);
-            self.cur = end;
+            Match::Error(err) => Some(Component::Error(err)),
+            _ => None,
+        };
 
-            ret = Some(Component::Prefix(prefix_comp));
-        }
-
-        self.parse_state = PathParseState::Prefix { verbatimdisk };
+        self.parse_state = if let Some(Component::Error(_)) = ret {
+            PathParseState::Finish
+        } else {
+            PathParseState::Prefix { verbatimdisk }
+        };
 
         if ret.is_some() {
             return ret;
@@ -124,18 +131,25 @@ impl<'path> Iter<'path> {
         }
 
         let mut ret = None;
-        for i in cur..end {
-            let cur_char = &self.path[i];
+        let mut err_pos = None;
+        for (i, cur_char) in self.path[cur..end].iter().enumerate() {
+            let last = cur + i;
             if SEPARATOR.contains(cur_char) {
-                let part = &self.path[cur..i];
-                let comp = if part.is_empty() {
-                    Component::CurDir
+                ret = if let Some(_err_pos) = err_pos {
+                    Some(self.invalid_char(cur, last))
                 } else {
-                    self.build_comp(cur, i)
+                    let part = &self.path[cur..last];
+                    let comp = if part.is_empty() {
+                        Component::CurDir
+                    } else {
+                        self.build_comp(cur, last)
+                    };
+                    Some(comp)
                 };
-                ret = Some(comp);
-                self.cur = i + 1;
+                self.cur = last + 1;
                 break;
+            } else if err_pos.is_none() && RESTRICTED_CHARS.contains(cur_char) {
+                err_pos = Some(last);
             }
         }
 
@@ -156,19 +170,20 @@ impl<'path> Iter<'path> {
 
     fn build_comp(&mut self, start: usize, end: usize) -> Component<'path> {
         let part = &self.path[start..end];
-        if part != NonDevicePart {
-            if part == Device {
-                self.invalid_name(start, end)
-            } else {
-                self.invalid_char(start, end)
-            }
-        } else {
-            let comp_str = as_str(part);
-            match comp_str {
-                "." => Component::CurDir,
-                ".." => Component::ParentDir,
-                _ => Component::Normal(OsStr::new(comp_str)),
-            }
+        match part {
+            b"." => Component::CurDir,
+            b".." => Component::ParentDir,
+            other if other.is_empty() => Component::CurDir,
+            other => match other[other.len() - 1] {
+                b'.' | b' ' => self.invalid_char(start, end),
+                _ => {
+                    if part == Device {
+                        self.invalid_name(start, end)
+                    } else {
+                        Component::Normal(as_osstr(part))
+                    }
+                }
+            },
         }
     }
 

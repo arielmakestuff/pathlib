@@ -436,7 +436,7 @@ mod test {
                     share = share
                 );
                 let mut path = prefix.clone();
-                if comp.len() > 0 {
+                if !comp.is_empty() {
                     path.push_str(&sep[..]);
                     path.push_str(&comp.join(&sep)[..]);
                 }
@@ -544,7 +544,7 @@ mod test {
                     disk = drive
                 );
                 let mut path = prefix.clone();
-                if comp.len() > 0 {
+                if !comp.is_empty() {
                     path.push_str(&comp.join(&sep)[..]);
                 }
 
@@ -666,7 +666,7 @@ mod test {
                     device = device
                 );
                 let mut path = prefix.clone();
-                if comp.len() > 0 {
+                if !comp.is_empty() {
                     path.push_str(&sep[..]);
                     path.push_str(&comp.join(&sep)[..]);
                 }
@@ -784,7 +784,7 @@ mod test {
                     share = share
                 );
                 let mut path = prefix.clone();
-                if comp.len() > 0 {
+                if !comp.is_empty() {
                     path.push_str(&sep[..]);
                     path.push_str(&comp.join(&sep)[..]);
                 }
@@ -895,7 +895,7 @@ mod test {
                     path.push_str(&sep[..]);
                 }
 
-                if comp.len() > 0 {
+                if !comp.is_empty() {
                     path.push_str(&comp.join(&sep)[..]);
                 }
 

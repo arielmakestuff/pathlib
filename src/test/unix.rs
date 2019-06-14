@@ -347,6 +347,97 @@ mod iter {
     }
 }
 
+mod error {
+
+    // --------------------
+    // Stdlib imports
+    // --------------------
+
+    // --------------------
+    // Third-party imports
+    // --------------------
+    use proptest::prelude::*;
+
+    // --------------------
+    // Local imports
+    // --------------------
+    use crate::common::string::as_str;
+    use crate::prelude::*;
+    use crate::unix::Component as UnixComponent;
+
+    // --------------------
+    // Tests
+    // --------------------
+    fn good_byte() -> impl Strategy<Value = u8> {
+        prop::num::u8::ANY
+            .prop_filter("Cannot be null or '/'", |v| *v != 0 && *v != b'/')
+    }
+
+    fn good_component() -> impl Strategy<Value = Vec<u8>> {
+        prop::collection::vec(good_byte(), 1..10)
+    }
+
+    fn bad_component() -> impl Strategy<Value = Vec<u8>> {
+        good_component().prop_perturb(|mut v, mut rng| {
+            let insert_index: usize = rng.gen_range(0, v.len());
+            v.insert(insert_index, 0);
+            v
+        })
+    }
+
+    fn bad_path() -> impl Strategy<Value = Vec<Vec<u8>>> {
+        let comp = prop_oneof!(good_component(), bad_component());
+        let head = prop::collection::vec(comp, 0..10);
+
+        (head, bad_component()).prop_perturb(|(mut head, tail), mut rng| {
+            if head.is_empty() {
+                head.push(tail);
+            } else {
+                let insert_index: usize = rng.gen_range(0, head.len());
+                head.insert(insert_index, tail);
+            }
+            head
+        })
+    }
+
+    proptest! {
+        #[test]
+        fn badpath_raises_error(path in bad_path()) {
+            let path_bytes = path.join(&b'/');
+            let first_zero = path_bytes
+                .iter()
+                .enumerate()
+                .fold(None, |ret, (i, el)| {
+                    if *el == 0 {
+                        match ret {
+                            Some(_) => ret,
+                            None => Some(i)
+                        }
+                    } else {
+                        ret
+                    }
+                }).expect("null byte not found");
+
+           let path_str = as_str(&path_bytes[..]);
+           prop_assert!(!path_str.is_empty());
+
+           let path = UnixPath::new(path_str);
+           let comp: Vec<UnixComponent> = path.iter().collect();
+           prop_assert!(!comp.is_empty());
+
+           let err = comp.last().unwrap();
+           let result = match err {
+               UnixComponent::Error(err) => {
+                   err.pos().2 == first_zero
+               }
+               _ => false
+
+           };
+           prop_assert!(result);
+        }
+    }
+}
+
 // ===========================================================================
 //
 // ===========================================================================

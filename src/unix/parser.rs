@@ -12,11 +12,11 @@
 
 // Third-party imports
 use combine::{
-    choice,
+    attempt, choice,
     easy::Errors,
     eof,
     error::ParseError,
-    look_ahead, not_followed_by,
+    not_followed_by,
     parser::{byte::byte, range::range, regex::find, Parser},
     stream::{FullRangeStream, PointerOffset, RangeStream},
     value,
@@ -139,8 +139,8 @@ where
                 (Component::Normal(as_osstr(comp)), comp.len())
             }
         });
-    let comp_option = (look_ahead(parentdir()), look_ahead(curdir()), comp);
-    choice(comp_option)
+
+    choice!(attempt(parentdir()), attempt(curdir()), attempt(comp))
 }
 
 // ===========================================================================

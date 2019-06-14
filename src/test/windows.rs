@@ -133,14 +133,14 @@ mod iter {
     use super::*;
 
     #[test]
-    fn verbatim_disk<'path>() {
+    fn verbatim_disk() {
         let path = br"\\?\C:\hello";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
         let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 3);
 
-        let expected: Vec<Component<'path>> = vec![
+        let expected: Vec<Component<'_>> = vec![
             Component::Prefix(PrefixComponent::new(
                 br"\\?\C:\",
                 Prefix::VerbatimDisk(b'C'),
@@ -153,14 +153,14 @@ mod iter {
     }
 
     #[test]
-    fn prefix_noroot<'path>() {
+    fn prefix_noroot() {
         let path = br"C:";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
         let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 1);
 
-        let expected: Vec<Component<'path>> = vec![Component::Prefix(
+        let expected: Vec<Component<'_>> = vec![Component::Prefix(
             PrefixComponent::new(br"C:", Prefix::Disk(b'C')),
         )];
 
@@ -168,14 +168,14 @@ mod iter {
     }
 
     #[test]
-    fn invalid_char<'path>() {
+    fn invalid_char() {
         let path = br"C:\hello.";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
         let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 3);
 
-        let expected_ok: Vec<Component<'path>> = vec![
+        let expected_ok: Vec<Component<'_>> = vec![
             Component::Prefix(PrefixComponent::new(br"C:", Prefix::Disk(b'C'))),
             Component::RootDir(OsStr::new(r"\")),
         ];
@@ -200,14 +200,14 @@ mod iter {
     }
 
     #[test]
-    fn verbatim_path<'path>() {
+    fn verbatim_path() {
         let path = br"\\?\hello\world";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
         let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 3);
 
-        let expected: Vec<Component<'path>> = vec![
+        let expected: Vec<Component<'_>> = vec![
             Component::Prefix(PrefixComponent::new(
                 br"\\?\hello",
                 Prefix::Verbatim(OsStr::new(r"hello")),
@@ -220,7 +220,7 @@ mod iter {
     }
 
     #[test]
-    fn invalid_filename<'path>() {
+    fn invalid_filename() {
         // --------------------
         // GIVEN
         // --------------------
@@ -245,7 +245,7 @@ mod iter {
         // the error is a ParseErrorKind::RestrictedName kind
         assert_eq!(comp.len(), 3);
 
-        let expected_ok: Vec<Component<'path>> = vec![
+        let expected_ok: Vec<Component<'_>> = vec![
             Component::Prefix(PrefixComponent::new(
                 br"\\?\hello",
                 Prefix::Verbatim(OsStr::new(r"hello")),
@@ -273,14 +273,14 @@ mod iter {
     }
 
     #[test]
-    fn relative_path<'path>() {
+    fn relative_path() {
         let path = br"hello\world";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
         let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 2);
 
-        let expected: Vec<Component<'path>> = vec![
+        let expected: Vec<Component<'_>> = vec![
             Component::Normal(OsStr::new(r"hello")),
             Component::Normal(OsStr::new(r"world")),
         ];
@@ -289,14 +289,14 @@ mod iter {
     }
 
     #[test]
-    fn double_path_separator<'path>() {
+    fn double_path_separator() {
         let path = br"hello\\world";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
         let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 3);
 
-        let expected: Vec<Component<'path>> = vec![
+        let expected: Vec<Component<'_>> = vec![
             Component::Normal(OsStr::new(r"hello")),
             Component::CurDir,
             Component::Normal(OsStr::new(r"world")),
@@ -306,14 +306,14 @@ mod iter {
     }
 
     #[test]
-    fn curdir<'path>() {
+    fn curdir() {
         let path = br"hello\world\.\what\now";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
         let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 5);
 
-        let expected: Vec<Component<'path>> = vec![
+        let expected: Vec<Component<'_>> = vec![
             Component::Normal(OsStr::new(r"hello")),
             Component::Normal(OsStr::new(r"world")),
             Component::CurDir,
@@ -325,14 +325,14 @@ mod iter {
     }
 
     #[test]
-    fn parentdir<'path>() {
+    fn parentdir() {
         let path = br"hello\world\..\what\now";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
         let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 5);
 
-        let expected: Vec<Component<'path>> = vec![
+        let expected: Vec<Component<'_>> = vec![
             Component::Normal(OsStr::new(r"hello")),
             Component::Normal(OsStr::new(r"world")),
             Component::ParentDir,
@@ -344,14 +344,14 @@ mod iter {
     }
 
     #[test]
-    fn curdir_at_start<'path>() {
+    fn curdir_at_start() {
         let path = br".\hello\world";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
         let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 3);
 
-        let expected: Vec<Component<'path>> = vec![
+        let expected: Vec<Component<'_>> = vec![
             Component::CurDir,
             Component::Normal(OsStr::new(r"hello")),
             Component::Normal(OsStr::new(r"world")),
@@ -361,14 +361,14 @@ mod iter {
     }
 
     #[test]
-    fn parentdir_at_start<'path>() {
+    fn parentdir_at_start() {
         let path = br"..\hello\world\";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
         let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 3);
 
-        let expected: Vec<Component<'path>> = vec![
+        let expected: Vec<Component<'_>> = vec![
             Component::ParentDir,
             Component::Normal(OsStr::new(r"hello")),
             Component::Normal(OsStr::new(r"world")),
@@ -378,14 +378,14 @@ mod iter {
     }
 
     #[test]
-    fn mixed_separator<'path>() {
+    fn mixed_separator() {
         let path = br"hello\world/what\now/brown/cow";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
         let comp: Vec<Component> = iter.collect();
         assert_eq!(comp.len(), 6);
 
-        let expected: Vec<Component<'path>> = vec![
+        let expected: Vec<Component<'_>> = vec![
             Component::Normal(OsStr::new(r"hello")),
             Component::Normal(OsStr::new(r"world")),
             Component::Normal(OsStr::new(r"what")),
@@ -398,12 +398,12 @@ mod iter {
     }
 
     #[test]
-    fn empty_path<'path>() {
+    fn empty_path() {
         let path = b"";
         let iter = Iter::new(SystemStr::from_bytes(path));
 
         let comp: Vec<Component> = iter.collect();
-        let expected: Vec<Component<'path>> = vec![Component::CurDir];
+        let expected: Vec<Component<'_>> = vec![Component::CurDir];
 
         assert_eq!(comp, expected);
     }

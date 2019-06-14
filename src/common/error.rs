@@ -142,6 +142,22 @@ impl<'path> ErrorInfo<'path> {
     {
         self.build_error(f(self))
     }
+
+    pub fn kind(&self) -> &ParseErrorKind {
+        &self.kind
+    }
+
+    pub fn path(&self) -> &'path [u8] {
+        self.path
+    }
+
+    pub fn pos(&self) -> (usize, usize, usize) {
+        (self.start, self.end, self.pos)
+    }
+
+    pub fn msg(&self) -> &'static str {
+        self.msg
+    }
 }
 
 impl<'path> From<&ErrorInfo<'path>> for ParseError {

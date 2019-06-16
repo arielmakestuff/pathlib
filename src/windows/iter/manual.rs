@@ -135,21 +135,20 @@ impl<'path> Iter<'path> {
         for (i, cur_char) in self.path[cur..end].iter().enumerate() {
             let last = cur + i;
             if SEPARATOR.contains(cur_char) {
-                ret = if let Some(_err_pos) = err_pos {
-                    Some(self.invalid_char(cur, last))
-                } else {
+                if ret.is_none() {
                     let part = &self.path[cur..last];
                     let comp = if part.is_empty() {
                         Component::CurDir
                     } else {
                         self.build_comp(cur, last)
                     };
-                    Some(comp)
-                };
+                    ret = Some(comp);
+                }
                 self.cur = last + 1;
                 break;
             } else if err_pos.is_none() && RESTRICTED_CHARS.contains(cur_char) {
                 err_pos = Some(last);
+                ret = Some(self.invalid_char(cur, last, last));
             }
         }
 
@@ -174,27 +173,54 @@ impl<'path> Iter<'path> {
             b"." => Component::CurDir,
             b".." => Component::ParentDir,
             other if other.is_empty() => Component::CurDir,
-            other => match other[other.len() - 1] {
-                b'.' | b' ' => self.invalid_char(start, end),
-                _ => {
-                    if part == Device {
-                        self.invalid_name(start, end)
-                    } else {
-                        Component::Normal(as_osstr(part))
+            other => {
+                let last_index = other.len() - 1;
+                match other[last_index] {
+                    b'.' | b' ' => {
+                        self.invalid_char(start, end, start + last_index)
+                    }
+                    _ => {
+                        if part == Device {
+                            self.invalid_name(start, end, start + last_index)
+                        } else {
+                            Component::Normal(as_osstr(part))
+                        }
                     }
                 }
-            },
+            }
         }
     }
 
-    fn invalid_name(&mut self, start: usize, end: usize) -> Component<'path> {
+    fn invalid_name(
+        &mut self,
+        start: usize,
+        end: usize,
+        err_pos: usize,
+    ) -> Component<'path> {
         let msg = "component uses a restricted name";
-        self.build_error(WindowsErrorKind::RestrictedName, start, end, msg)
+        self.build_error(
+            WindowsErrorKind::RestrictedName,
+            start,
+            end,
+            err_pos,
+            msg,
+        )
     }
 
-    fn invalid_char(&mut self, start: usize, end: usize) -> Component<'path> {
+    fn invalid_char(
+        &mut self,
+        start: usize,
+        end: usize,
+        err_pos: usize,
+    ) -> Component<'path> {
         let msg = "path component contains an invalid character";
-        self.build_error(WindowsErrorKind::InvalidCharacter, start, end, msg)
+        self.build_error(
+            WindowsErrorKind::InvalidCharacter,
+            start,
+            end,
+            err_pos,
+            msg,
+        )
     }
 
     fn build_error(
@@ -202,13 +228,14 @@ impl<'path> Iter<'path> {
         kind: WindowsErrorKind,
         start: usize,
         end: usize,
+        err_pos: usize,
         msg: &'static str,
     ) -> Component<'path> {
         // Return None for every call to next() after this
         self.parse_state = PathParseState::Finish;
 
         let err =
-            ErrorInfo::new(kind.into(), self.path, start, end, start, msg);
+            ErrorInfo::new(kind.into(), self.path, start, end, err_pos, msg);
         Component::Error(err)
     }
 

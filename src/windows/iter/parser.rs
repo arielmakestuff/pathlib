@@ -20,9 +20,7 @@ use combine::{
 use crate::common::error;
 use crate::path::{PathIterator, SystemStr};
 use crate::windows::iter::Component;
-use crate::windows::parser::{
-    component, prefix, root, valid_part_char, RESTRICTED_NAME_ERRMSG,
-};
+use crate::windows::parser::{component, prefix, root, RESTRICTED_NAME_ERRMSG};
 use crate::windows::WindowsErrorKind;
 
 // ===========================================================================
@@ -87,14 +85,16 @@ fn make_error<'path, I, R>(
 
     let kind = error::ParseErrorKind::Windows(errkind);
 
-    // the returned tuple is (found, rest) where found is the part of the input
-    // that matches and the rest is the remaining part of the input that's
-    // unparsed
-    let rest = valid_part_char()
-        .parse(path_comp)
-        .expect("should not fail")
-        .0;
-    let end = start + rest.len();
+    let mut end = start;
+    for (i, el) in path_comp.iter().enumerate() {
+        match el {
+            b'/' | b'\\' => {
+                end = start + i;
+                break;
+            }
+            _ => {}
+        }
+    }
 
     error::ErrorInfo::new(kind, path, start, end, pos, msg)
 }

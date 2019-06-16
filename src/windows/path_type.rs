@@ -201,7 +201,7 @@ pub struct DeviceNamespace;
 
 impl PartialEq<&[u8]> for DeviceNamespace {
     fn eq(&self, other: &&[u8]) -> bool {
-        !other.is_empty() && other.iter().all(|c| !RESTRICTED_CHARS.contains(c))
+        !other.is_empty()
     }
 }
 
@@ -633,13 +633,19 @@ mod test {
     mod devicenamespace {
         use super::*;
 
-        use crate::windows::path_type::{DeviceNamespace, RESTRICTED_CHARS};
+        use crate::windows::path_type::DeviceNamespace;
 
-        use proptest::{prop_assert, prop_assert_eq, prop_assert_ne, proptest};
+        use proptest::{prop_assert_eq, proptest};
 
         #[test]
         fn self_equal() {
             assert_eq!(DeviceNamespace, DeviceNamespace);
+        }
+
+        #[test]
+        fn ne_value() {
+            let bytes = Vec::from(&b""[..]);
+            assert_ne!(DeviceNamespace, &bytes[..]);
         }
 
         proptest! {
@@ -647,24 +653,6 @@ mod test {
             fn valid_value(name in COMP_REGEX) {
                 let val = name.as_bytes();
                 prop_assert_eq!(DeviceNamespace, val);
-            }
-
-            #[test]
-            fn ne_value(s in r#".*"#, c in CHAR_REGEX) {
-                let mut bytes = Vec::from(s.as_bytes());
-
-                // Make sure the generated string contains at least a single
-                // restricted character
-                if !bytes.iter().any(|b| RESTRICTED_CHARS.contains(b)) {
-                    let mid = bytes.len() / 2;
-                    let mut val = Vec::with_capacity(bytes.len() + c.len());
-                    val.extend(&bytes[..mid]);
-                    val.extend(c.as_bytes());
-                    val.extend(&bytes[mid..]);
-                    bytes = val;
-                }
-
-                prop_assert_ne!(DeviceNamespace, &bytes[..]);
             }
         }
     }

@@ -74,7 +74,7 @@ lazy_static! {
 
 pub fn separator<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]>,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]>,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     choice!(attempt(range(&b"\\"[..])), attempt(range(&b"/"[..])))
@@ -90,7 +90,7 @@ where
 
 pub fn root<'a, I>() -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     separator().map(|sep| (Component::RootDir(as_osstr(sep)), sep.len()))
@@ -98,7 +98,7 @@ where
 
 fn curdir<'a, I>() -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     let sep = choice!(attempt(separator().map(|_| ())), attempt(eof()));
@@ -109,7 +109,7 @@ where
 
 fn parentdir<'a, I>() -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     let sep = choice!(attempt(separator().map(|_| ())), attempt(eof()));
@@ -124,7 +124,7 @@ where
 
 fn double_slash<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     separator().then(|_| separator())
@@ -132,7 +132,7 @@ where
 
 fn question_slash<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     bytes(b"?").then(|_| separator())
@@ -140,7 +140,7 @@ where
 
 fn dot_slash<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     bytes(b".").then(|_| separator())
@@ -156,7 +156,7 @@ where
 
 fn device_namespace<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     find(&*VALID_NAME_REGEX)
@@ -164,7 +164,7 @@ where
 
 fn unc_part<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     find(&*UNC_WORD)
@@ -192,7 +192,7 @@ where
 fn file_name<'a, I>(
 ) -> impl Parser<Input = I, Output = Option<(Vec<u8>, &'a [u8])>> + 'a
 where
-    I: 'a + RangeStream<Item = u8, Range = &'a [u8]>,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     file_parts().then(|parts| {
@@ -213,7 +213,7 @@ where
 
 fn nondevice_part<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]>,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     let sep = choice!(attempt(separator().map(|_| ())), attempt(eof()));
@@ -261,7 +261,7 @@ where
 
 fn nonunc_part<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     let nomatch = choice!(
@@ -274,7 +274,7 @@ where
 
 fn server_share<'a, I>() -> impl Parser<Input = I, Output = (&'a [u8], &'a [u8])>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]>,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     nondevice_part().skip(separator()).and(nondevice_part())
@@ -282,7 +282,7 @@ where
 
 fn verbatim_start<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     recognize(double_slash().and(question_slash()))
@@ -290,7 +290,7 @@ where
 
 fn verbatim_unc_start<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     recognize(verbatim_start().with(unc_part()).skip(separator()))
@@ -303,7 +303,7 @@ where
 fn prefix_verbatim<'a, I>(
 ) -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     let parser = || verbatim_start().with(nonunc_part());
@@ -321,7 +321,7 @@ where
 fn prefix_verbatimunc<'a, I>(
 ) -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     let parser = || verbatim_unc_start().with(server_share());
@@ -339,7 +339,7 @@ where
 fn prefix_verbatimdisk<'a, I>(
 ) -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     let parser = |consume_root| {
@@ -366,7 +366,7 @@ where
 fn prefix_devicens<'a, I>(
 ) -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     let parser = || {
@@ -387,7 +387,7 @@ where
 
 fn prefix_unc<'a, I>() -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     let parser = || double_slash().with(server_share());
@@ -405,7 +405,7 @@ where
 fn prefix_disk<'a, I>(
 ) -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]>,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]>,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     recognize(letter().and(byte(b':'))).map(|disk: &'a [u8]| {
@@ -416,7 +416,7 @@ where
 
 pub fn prefix<'a, I>() -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     choice!(
@@ -432,7 +432,7 @@ where
 pub fn component<'a, I>(
 ) -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
     let sep = choice!(attempt(separator().map(|_| ())), attempt(eof()));

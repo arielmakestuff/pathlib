@@ -47,7 +47,7 @@ lazy_static! {
                 s.push_str("|");
             }
 
-            let regex = name.bytes().fold("(?i-u)".to_owned(), |mut s, b| {
+            let regex = name.bytes().fold("(?i-u)^".to_owned(), |mut s, b| {
                 s.push_str(format!("\\x{:02x}", b).as_str());
                 s
             });
@@ -61,11 +61,11 @@ lazy_static! {
             s.push_str(format!("\\x{:02x}", c).as_str());
             s
         });
-        let regex = format!("[^{}]+", regex);
+        let regex = format!("^[^{}]+", regex);
         regex_bytes::Regex::new(regex.as_str()).unwrap()
     };
     static ref UNC_WORD: regex_bytes::Regex =
-        { regex_bytes::Regex::new("(?i)UNC").unwrap() };
+        { regex_bytes::Regex::new("(?i)^UNC").unwrap() };
 }
 
 // ===========================================================================

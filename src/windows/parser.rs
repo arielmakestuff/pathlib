@@ -14,17 +14,16 @@ use std::path::Prefix;
 use combine::{
     attempt, choice, eof,
     error::{Info, ParseError},
-    look_ahead, not_followed_by,
+    look_ahead, none_of, not_followed_by, one_of,
     parser::{
         byte::{byte, bytes, letter},
         range::{range, recognize},
         regex::find,
         Parser,
     },
-    range::take_while,
-    sep_by,
+    skip_many,
     stream::{FullRangeStream, RangeStream},
-    token, unexpected_any, value,
+    token, value,
 };
 use lazy_static::lazy_static;
 use regex::bytes as regex_bytes;
@@ -146,14 +145,6 @@ where
     bytes(b".").then(|_| separator())
 }
 
-fn device<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
-where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
-    I::Error: ParseError<I::Item, I::Range, I::Position>,
-{
-    find(&*DEVICE_REGEX)
-}
-
 fn device_namespace<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
 where
     I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
@@ -170,45 +161,32 @@ where
     find(&*UNC_WORD)
 }
 
-pub fn valid_part_char<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
+fn file_ext<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
 where
-    I: RangeStream<Item = u8, Range = &'a [u8]>,
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]>,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
-    take_while(|b: u8| !RESTRICTED_CHARS.contains(&b))
+    let ext = none_of(
+        RESTRICTED_CHARS
+            .iter()
+            .cloned()
+            .chain([b'.'].iter().cloned()),
+    );
+    token(b'.')
+        .with(recognize(skip_many(ext)))
+        .skip(look_ahead(path_sep()))
 }
 
-fn file_parts<'a, I>() -> impl Parser<Input = I, Output = Vec<&'a [u8]>>
-where
-    I: RangeStream<Item = u8, Range = &'a [u8]>,
-    I::Error: ParseError<I::Item, I::Range, I::Position>,
-{
-    sep_by(
-        take_while(|b: u8| b != b'.' && !RESTRICTED_CHARS.contains(&b)),
-        token(b'.'),
-    )
-}
-
-fn file_name<'a, I>(
-) -> impl Parser<Input = I, Output = Option<(Vec<u8>, &'a [u8])>> + 'a
+fn device<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
 where
     I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
-    file_parts().then(|parts| {
-        let parts_len = parts.len();
-        if parts.is_empty() || (parts_len == 1 && parts[0].is_empty()) {
-            value(None)
-        } else if parts_len == 1 {
-            let last = *parts.last().unwrap();
-            value(Some((last.to_vec(), &[][..])))
-        } else {
-            let slice = &parts[..parts.len() - 1];
-            let last = *parts.last().unwrap();
-            let name = slice.join(&b'.');
-            value(Some((name, last)))
-        }
-    })
+    let end = choice!(
+        attempt(look_ahead(path_sep())),
+        attempt(look_ahead(file_ext().map(|_| ())))
+    );
+    find(&*DEVICE_REGEX).skip(end)
 }
 
 fn nondevice_part<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
@@ -216,47 +194,31 @@ where
     I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
-    let sep = choice!(attempt(separator().map(|_| ())), attempt(eof()));
-    let part = valid_part_char().skip(look_ahead(sep));
+    let errmsg = "last character is invalid";
 
-    part.then(|part: &'a [u8]| {
-        if part.is_empty() {
-            return value(part).left();
-        }
-
-        let mut parser = choice!(attempt(parentdir()), attempt(curdir()));
-        let res = parser.easy_parse(part);
-        if res.is_ok() {
-            value(part).left()
-        } else {
-            let last = *part.last().unwrap();
-            match last {
-                b' ' | b'.' => {
-                    return unexpected_any(Info::Range(part))
-                        .message("last character is invalid")
-                        .right();
-                }
-                _ => {}
-            }
-            let ret = value(part).left();
-
-            // This should always succeed since it has already been successfully
-            // parsed
-            let mut parser = file_name();
-            let file_name = parser.easy_parse(part).unwrap();
-            let file_name = file_name.0.unwrap();
-
-            // Fail if the file name matches a reserved name
-            let mut parser = device();
-            let file_device = parser.parse(&file_name.0[..]);
-            match file_device {
-                Ok(_) => unexpected_any(Info::Range(part))
-                    .message(RESTRICTED_NAME_ERRMSG)
-                    .right(),
-                Err(_) => ret,
-            }
-        }
-    })
+    let not_single_space =
+        not_followed_by(byte(b' ').skip(path_sep())).message(errmsg);
+    let not_invalid_char =
+        not_followed_by(one_of(RESTRICTED_CHARS.iter().cloned()))
+            .message("invalid character");
+    let not_invalid_last_char = || {
+        not_followed_by(one_of(b" .".iter().cloned()).skip(path_sep()))
+            .message(errmsg)
+    };
+    let tok1 =
+        none_of(RESTRICTED_CHARS.iter().cloned()).skip(not_invalid_last_char());
+    let err = not_invalid_char.with(not_invalid_last_char());
+    let after =
+        choice!(attempt(look_ahead(path_sep())), attempt(err.map(|_| ())));
+    let comp = skip_many(tok1).skip(after);
+    let part = not_single_space.with(recognize(comp));
+    let empty = look_ahead(path_sep());
+    choice!(
+        attempt(empty).map(|_| &[][..]),
+        attempt(recognize(parentdir())),
+        attempt(recognize(curdir())),
+        attempt(part)
+    )
 }
 
 fn nonunc_part<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
@@ -435,19 +397,23 @@ where
     I: 'a + RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
     I::Error: ParseError<I::Item, I::Range, I::Position>,
 {
-    let sep = choice!(attempt(separator().map(|_| ())), attempt(eof()));
-    nondevice_part().skip(sep).map(|comp| {
-        if comp.is_empty() {
-            (Component::CurDir, 0)
-        } else {
-            let len = comp.len();
-            match comp {
-                b"." => (Component::CurDir, len),
-                b".." => (Component::ParentDir, len),
-                _ => (Component::Normal(as_osstr(comp)), len),
+    let not_device = not_followed_by(device().map(|part| Info::Range(part)))
+        .message(RESTRICTED_NAME_ERRMSG);
+
+    not_device
+        .with(nondevice_part().skip(path_sep()))
+        .map(|comp| {
+            if comp.is_empty() {
+                (Component::CurDir, 0)
+            } else {
+                let len = comp.len();
+                match comp {
+                    b"." => (Component::CurDir, len),
+                    b".." => (Component::ParentDir, len),
+                    _ => (Component::Normal(as_osstr(comp)), len),
+                }
             }
-        }
-    })
+        })
 }
 
 // ===========================================================================
@@ -458,22 +424,6 @@ where
 #[cfg_attr(tarpaulin, skip)]
 mod test {
     use combine::Parser;
-
-    mod file_name {
-        use super::*;
-        use crate::windows::parser::file_name;
-
-        #[test]
-        fn empty_filename() {
-            let name = b"";
-            let parse_result = file_name().parse(&name[..]);
-            let result = match parse_result {
-                Err(_) => false,
-                Ok((cur, _)) => cur.is_none(),
-            };
-            assert!(result);
-        }
-    }
 
     mod prefix_verbatimunc {
         use super::*;

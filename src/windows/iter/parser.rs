@@ -72,7 +72,7 @@ fn make_error<'path, I, R>(
                     ret = WindowsErrorKind::RestrictedName;
                     break;
                 }
-                Message(Borrowed(errmsg)) | Unexpected(Borrowed(errmsg)) => {
+                Message(Borrowed(errmsg)) => {
                     msg = errmsg;
                     break;
                 }

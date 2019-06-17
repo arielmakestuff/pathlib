@@ -80,6 +80,14 @@ where
     choice!(attempt(range(&b"\\"[..])), attempt(range(&b"/"[..])))
 }
 
+pub fn path_sep<'a, I>() -> impl Parser<Input = I, Output = ()> + 'a
+where
+    I: 'a + RangeStream<Item = u8, Range = &'a [u8]>,
+    I::Error: ParseError<I::Item, I::Range, I::Position>,
+{
+    choice!(attempt(separator().map(|_| ())), attempt(eof()))
+}
+
 pub fn root<'a, I>() -> impl Parser<Input = I, Output = (Component<'a>, usize)>
 where
     I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,

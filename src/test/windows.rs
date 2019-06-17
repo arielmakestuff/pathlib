@@ -409,6 +409,192 @@ mod iter {
     }
 }
 
+mod error {
+
+    // --------------------
+    // Stdlib imports
+    // --------------------
+    use std::collections::HashSet;
+
+    // --------------------
+    // Third-party imports
+    // --------------------
+    use lazy_static::lazy_static;
+    use proptest::prelude::*;
+
+    // --------------------
+    // Local imports
+    // --------------------
+    use crate::common::string::as_str;
+    use crate::prelude::*;
+    use crate::windows::Component as WindowsComponent;
+
+    // --------------------
+    // Globals
+    // --------------------
+    lazy_static! {
+        static ref RESTRICTED_CHARS: HashSet<u8> = {
+            let chars = r#"<>:"/\|?*"#;
+            let mut all_chars = HashSet::with_capacity(chars.len());
+            for c in chars.chars() {
+                all_chars.insert(c as u8);
+            }
+
+            // These are ascii chars code 0 - 31
+            for i in 0..=31 {
+                all_chars.insert(i);
+            }
+            all_chars
+        };
+    }
+
+    // --------------------
+    // Helpers
+    // --------------------
+    fn good_byte() -> impl Strategy<Value = u8> {
+        prop::num::u8::ANY.prop_filter("Cannot contain restricted byte", |v| {
+            !RESTRICTED_CHARS.contains(v)
+        })
+    }
+
+    fn bad_byte() -> impl Strategy<Value = u8> {
+        let bad_vals: Vec<u8> = RESTRICTED_CHARS
+            .iter()
+            .cloned()
+            .filter(|el| *el != b'/' && *el != b'\\')
+            .collect();
+        prop::sample::select(bad_vals)
+    }
+
+    fn good_component() -> impl Strategy<Value = Vec<u8>> {
+        prop::collection::vec(good_byte(), 0..10)
+    }
+
+    fn bad_component() -> impl Strategy<Value = Vec<u8>> {
+        (good_component(), bad_byte()).prop_perturb(|(mut v, bad), mut rng| {
+            if v.is_empty() {
+                v.push(bad);
+            } else {
+                let insert_index = rng.gen_range(0, v.len());
+                v.insert(insert_index, bad);
+            }
+            v
+        })
+    }
+
+    fn bad_path() -> impl Strategy<Value = Vec<Vec<u8>>> {
+        let comp = prop_oneof!(good_component(), bad_component());
+        let body = prop::collection::vec(comp, 0..10);
+
+        (good_component(), body, bad_component()).prop_perturb(
+            |(head, mut body, tail), mut rng| {
+                if body.is_empty() {
+                    body.push(head);
+                    body.push(tail);
+                } else {
+                    body.insert(0, head);
+
+                    let insert_index: usize = rng.gen_range(0, body.len());
+                    body.insert(insert_index, tail);
+                }
+
+                // Make sure that windows prefixes are not generated (since they
+                // are valid but get falsely detected as invalid by the test) by
+                // adding the "42" byte string at the beginning of the path
+                for comp in body.iter_mut() {
+                    if !comp.is_empty() {
+                        let first = comp[0];
+                        let is_disk = comp.len() >= 2
+                            && first.is_ascii_alphabetic()
+                            && comp[1] == b':';
+                        let is_sep = first == b'/' || first == b'\\';
+                        if is_disk || is_sep {
+                            comp.splice(..0, b"42".iter().cloned());
+                        }
+                        break;
+                    }
+                }
+
+                body
+            },
+        )
+    }
+
+    fn find_first_bad_byte(path: &[Vec<u8>]) -> usize {
+        let mut i = 0usize;
+        for comp in path.iter() {
+            let part = &comp[..];
+            if part.is_empty() {
+                i += 1;
+                continue;
+            } else if part == b"." || part == b".." {
+                i += part.len() + 1;
+                continue;
+            }
+
+            let mut index = None;
+            for (i, el) in comp.iter().enumerate() {
+                match index {
+                    None if RESTRICTED_CHARS.contains(el) => {
+                        index = Some(i);
+                        break;
+                    }
+                    _ => {}
+                }
+            }
+            match index {
+                None => {
+                    if let Some(c) = part.last() {
+                        match c {
+                            b' ' | b'.' => {
+                                i += part.len() - 1;
+                                break;
+                            }
+                            _ => {
+                                i += comp.len() + 1;
+                            }
+                        }
+                    }
+                }
+                Some(err_pos) => {
+                    i += err_pos;
+                    break;
+                }
+            }
+        }
+        i
+    }
+
+    // --------------------
+    // Tests
+    // --------------------
+    proptest! {
+        #[test]
+        fn badpath_raises_error(path in bad_path()) {
+            let mut sep: HashSet<u8> = HashSet::with_capacity(2);
+            sep.extend(b"/\\");
+
+            let first_bad_byte = find_first_bad_byte(&path);
+            let path_bytes = path.join(&b'/');
+
+            let path_str = as_str(&path_bytes[..]);
+            prop_assert!(!path_str.is_empty());
+
+            let path = WindowsPath::new(path_str);
+            let comp: Vec<WindowsComponent> = path.iter().collect();
+            prop_assert!(!comp.is_empty());
+
+            let result = match comp.last() {
+                Some(WindowsComponent::Error(err)) => {
+                    err.pos().2 == first_bad_byte
+                }
+                _ => false,
+            };
+            prop_assert!(result);
+        }
+    }
+}
+
 // ===========================================================================
 //
 // ===========================================================================

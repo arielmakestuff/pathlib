@@ -50,7 +50,7 @@ impl From<WindowsErrorKind> for ParseErrorKind {
     msg
 )]
 pub struct ParseError {
-    _kind: ParseErrorKind,
+    kind: ParseErrorKind,
     component: OsString,
     path: OsString,
     start: usize,
@@ -68,7 +68,7 @@ impl ParseError {
         msg: String,
     ) -> ParseError {
         ParseError {
-            _kind: kind,
+            kind,
             component,
             path,
             start,
@@ -78,7 +78,7 @@ impl ParseError {
     }
 
     pub fn kind(&self) -> ParseErrorKind {
-        self._kind
+        self.kind
     }
 
     pub fn msg(&self) -> &str {

@@ -43,14 +43,6 @@ lazy_static! {
 // Error Handling
 // ===========================================================================
 
-fn simple_component<'a, I>() -> impl Parser<Input = I, Output = &'a [u8]>
-where
-    I: RangeStream<Item = u8, Range = &'a [u8]> + FullRangeStream,
-    I::Error: ParseError<I::Item, I::Range, I::Position>,
-{
-    find(&*SIMPLE_COMPONENT)
-}
-
 pub fn into_error<I, R>(
     path: &[u8],
     start: usize,
@@ -60,20 +52,10 @@ pub fn into_error<I, R>(
     let path_comp = &path[start..];
 
     let err = parse_error.map_position(|p| p.translate_position(path_comp));
-    let err_position = err.position;
     let msg = "found null character";
-    let pos = start + err_position;
+    let errpos = start + err.position;
 
-    // the returned tuple is (found, rest) where found is the part of the input
-    // that matches and the rest is the remaining part of the input that's
-    // unparsed
-    let rest = simple_component()
-        .parse(path_comp)
-        .expect("should not fail")
-        .0;
-    let end = start + rest.len();
-
-    error::ErrorInfo::new(kind, path, start, end, pos, msg)
+    error::ErrorInfo::new(kind, path, errpos, msg)
 }
 
 // ===========================================================================

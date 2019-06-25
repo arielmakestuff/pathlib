@@ -148,7 +148,7 @@ impl<'path> Iter<'path> {
                 break;
             } else if err_pos.is_none() && RESTRICTED_CHARS.contains(cur_char) {
                 err_pos = Some(last);
-                ret = Some(self.invalid_char(cur, last, last));
+                ret = Some(self.invalid_char(last));
             }
         }
 
@@ -176,12 +176,10 @@ impl<'path> Iter<'path> {
             other => {
                 let last_index = other.len() - 1;
                 match other[last_index] {
-                    b'.' | b' ' => {
-                        self.invalid_char(start, end, start + last_index)
-                    }
+                    b'.' | b' ' => self.invalid_char(start + last_index),
                     _ => {
                         if part == Device {
-                            self.invalid_name(start, end, start + last_index)
+                            self.invalid_name(start + last_index)
                         } else {
                             Component::Normal(as_osstr(part))
                         }
@@ -191,51 +189,26 @@ impl<'path> Iter<'path> {
         }
     }
 
-    fn invalid_name(
-        &mut self,
-        start: usize,
-        end: usize,
-        err_pos: usize,
-    ) -> Component<'path> {
+    fn invalid_name(&mut self, err_pos: usize) -> Component<'path> {
         let msg = "component uses a restricted name";
-        self.build_error(
-            WindowsErrorKind::RestrictedName,
-            start,
-            end,
-            err_pos,
-            msg,
-        )
+        self.build_error(WindowsErrorKind::RestrictedName, err_pos, msg)
     }
 
-    fn invalid_char(
-        &mut self,
-        start: usize,
-        end: usize,
-        err_pos: usize,
-    ) -> Component<'path> {
+    fn invalid_char(&mut self, err_pos: usize) -> Component<'path> {
         let msg = "path component contains an invalid character";
-        self.build_error(
-            WindowsErrorKind::InvalidCharacter,
-            start,
-            end,
-            err_pos,
-            msg,
-        )
+        self.build_error(WindowsErrorKind::InvalidCharacter, err_pos, msg)
     }
 
     fn build_error(
         &mut self,
         kind: WindowsErrorKind,
-        start: usize,
-        end: usize,
         err_pos: usize,
         msg: &'static str,
     ) -> Component<'path> {
         // Return None for every call to next() after this
         self.parse_state = PathParseState::Finish;
 
-        let err =
-            ErrorInfo::new(kind.into(), self.path, start, end, err_pos, msg);
+        let err = ErrorInfo::new(kind.into(), self.path, err_pos, msg);
         Component::Error(err)
     }
 

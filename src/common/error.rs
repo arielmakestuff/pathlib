@@ -41,38 +41,25 @@ impl From<WindowsErrorKind> for ParseErrorKind {
 }
 
 #[derive(Debug, Display, PartialEq, Eq)]
-#[display(
-    fmt = "{:?}: unable to parse component {:?} range {}..{}: {}",
-    path,
-    component,
-    start,
-    end,
-    msg
-)]
+#[display(fmt = "unable to parse path at position {}: {}", errpos, msg)]
 pub struct ParseError {
     kind: ParseErrorKind,
-    component: OsString,
     path: OsString,
-    start: usize,
-    end: usize,
+    errpos: usize,
     msg: String,
 }
 
 impl ParseError {
     pub(crate) fn new(
         kind: ParseErrorKind,
-        component: OsString,
         path: OsString,
-        start: usize,
-        end: usize,
+        errpos: usize,
         msg: String,
     ) -> ParseError {
         ParseError {
             kind,
-            component,
             path,
-            start,
-            end,
+            errpos,
             msg,
         }
     }
@@ -96,9 +83,7 @@ impl Error for ParseError {
 pub struct ErrorInfo<'path> {
     kind: ParseErrorKind,
     path: &'path [u8],
-    start: usize,
-    end: usize,
-    pos: usize,
+    errpos: usize,
     msg: &'static str,
 }
 
@@ -106,32 +91,22 @@ impl<'path> ErrorInfo<'path> {
     pub fn new(
         kind: ParseErrorKind,
         path: &'path [u8],
-        start: usize,
-        end: usize,
-        pos: usize,
+        errpos: usize,
         msg: &'static str,
     ) -> ErrorInfo<'path> {
         ErrorInfo {
             kind,
             path,
-            start,
-            end,
-            pos,
+            errpos,
             msg,
         }
     }
 
     fn build_error(&self, msg: String) -> ParseError {
-        let as_os_string = |path: &[u8]| OsString::from(as_osstr(path));
-
-        let start = self.start;
-        let end = self.end;
         ParseError::new(
             self.kind,
-            as_os_string(&self.path[start..end]),
-            as_os_string(&self.path[..]),
-            start,
-            end,
+            OsString::from(as_osstr(&self.path[..])),
+            self.errpos,
             msg,
         )
     }
@@ -155,8 +130,8 @@ impl<'path> ErrorInfo<'path> {
         self.path
     }
 
-    pub fn pos(&self) -> (usize, usize, usize) {
-        (self.start, self.end, self.pos)
+    pub fn errpos(&self) -> usize {
+        self.errpos
     }
 
     pub fn msg(&self) -> &'static str {

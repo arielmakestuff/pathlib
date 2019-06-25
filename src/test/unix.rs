@@ -44,10 +44,8 @@ mod public_export {
         fn source_always_none() {
             let err = ParseError::new(
                 UnixErrorKind::InvalidCharacter.into(),
-                OsString::from("hello"),
                 OsString::from(as_str(b"/hello/world")),
                 1,
-                6,
                 String::from("message"),
             );
 
@@ -58,10 +56,8 @@ mod public_export {
         fn kind_value() {
             let err = ParseError::new(
                 UnixErrorKind::InvalidCharacter.into(),
-                OsString::from("hello"),
                 OsString::from(as_str(b"/hello/world")),
                 1,
-                6,
                 String::from("message"),
             );
 
@@ -428,7 +424,7 @@ mod error {
            let err = comp.last().unwrap();
            let result = match err {
                UnixComponent::Error(err) => {
-                   err.pos().2 == first_zero
+                   err.errpos() == first_zero
                }
                _ => false
 

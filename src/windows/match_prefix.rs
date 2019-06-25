@@ -44,13 +44,11 @@ pub enum Match<'path> {
 fn map_err_pos<'path>(
     kind: WindowsErrorKind,
     path: &'path [u8],
-    start: usize,
-    end: usize,
     err_pos: Option<usize>,
     msg: &'static str,
 ) -> Option<ErrorInfo<'path>> {
     err_pos.map_or(None, |err_pos| {
-        let err = ErrorInfo::new(kind.into(), path, start, end, err_pos, msg);
+        let err = ErrorInfo::new(kind.into(), path, err_pos, msg);
         Some(err)
     })
 }
@@ -133,8 +131,6 @@ fn match_verbatim(path: &[u8], first: usize) -> Match {
     let ret = map_err_pos(
         WindowsErrorKind::InvalidCharacter,
         path,
-        first,
-        end,
         err_pos,
         INVALID_CHAR_ERRMSG,
     );
@@ -195,8 +191,6 @@ fn match_unc(path: &[u8], first: usize) -> Match {
     let ret = map_err_pos(
         WindowsErrorKind::InvalidCharacter,
         path,
-        first,
-        last,
         err_pos,
         INVALID_CHAR_ERRMSG,
     );
@@ -258,8 +252,6 @@ fn match_devicens(path: &[u8], first: usize) -> Match {
     let ret = map_err_pos(
         WindowsErrorKind::InvalidCharacter,
         path,
-        first,
-        end,
         err_pos,
         INVALID_CHAR_ERRMSG,
     );

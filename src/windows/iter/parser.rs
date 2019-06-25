@@ -83,24 +83,7 @@ fn make_error<'path, I, R>(
     };
 
     let kind = error::ParseErrorKind::Windows(errkind);
-
-    let mut end = start;
-    for (i, el) in path_comp.iter().enumerate() {
-        let cur_pos = start + i;
-        if cur_pos < err_pos {
-            continue;
-        }
-
-        match el {
-            b'/' | b'\\' => {
-                end = start + i;
-                break;
-            }
-            _ => {}
-        }
-    }
-
-    error::ErrorInfo::new(kind, path, start, end, err_pos, msg)
+    error::ErrorInfo::new(kind, path, err_pos, msg)
 }
 
 // ===========================================================================

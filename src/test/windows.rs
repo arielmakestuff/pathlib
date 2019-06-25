@@ -52,10 +52,8 @@ mod public_export {
         fn source_always_none() {
             let err = ParseError::new(
                 WindowsErrorKind::RestrictedName.into(),
-                OsString::from("hello"),
                 OsString::from(as_str(b"/hello/world")),
                 1,
-                6,
                 String::from("message"),
             );
 
@@ -586,7 +584,7 @@ mod error {
 
             let result = match comp.last() {
                 Some(WindowsComponent::Error(err)) => {
-                    err.pos().2 == first_bad_byte
+                    err.errpos() == first_bad_byte
                 }
                 _ => false,
             };

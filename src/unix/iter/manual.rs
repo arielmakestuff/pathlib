@@ -125,18 +125,13 @@ impl<'path> Iter<'path> {
         err_pos: usize,
     ) -> Component<'path> {
         if found_err {
-            self.invalid_char(start, end, err_pos)
+            self.invalid_char(err_pos)
         } else {
             Component::from(&self.path[start..end])
         }
     }
 
-    fn invalid_char(
-        &mut self,
-        start: usize,
-        end: usize,
-        err_pos: usize,
-    ) -> Component<'path> {
+    fn invalid_char(&mut self, err_pos: usize) -> Component<'path> {
         // Return None for every call to next() after this
         self.parse_state = PathParseState::Finish;
 
@@ -144,8 +139,6 @@ impl<'path> Iter<'path> {
         let err = ErrorInfo::new(
             UnixErrorKind::InvalidCharacter.into(),
             self.path,
-            start,
-            end,
             err_pos,
             msg,
         );

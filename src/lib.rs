@@ -8,7 +8,7 @@
 // ===========================================================================
 
 #[macro_use]
-mod common;
+pub mod common;
 
 #[cfg(test)]
 #[cfg_attr(tarpaulin, skip)]

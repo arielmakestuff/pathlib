@@ -133,15 +133,26 @@ impl<'path> Iter<'path> {
             return Some(Component::CurDir);
         }
 
-        let mut ret = None;
-        if let Ok((found, _)) = prefix().easy_parse(self.path) {
-            if let (Component::Prefix(_), end) = found {
-                self.cur = end;
-                ret = Some(found.0);
-            }
-        }
-
         self.parse_state = PathParseState::Prefix;
+        let ret = match prefix().easy_parse(self.path) {
+            Ok((found, _)) => match found {
+                (Component::Prefix(_), end) => {
+                    self.cur = end;
+                    Some(found.0)
+                }
+                _ => None,
+            },
+            Err(e) => {
+                let err = make_error(self.path, self.cur, e);
+                match err.msg() {
+                    "" => None,
+                    _ => {
+                        self.parse_state = PathParseState::Finish;
+                        Some(Component::Error(err))
+                    }
+                }
+            }
+        };
 
         match ret {
             Some(_) => ret,

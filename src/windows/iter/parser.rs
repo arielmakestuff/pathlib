@@ -54,8 +54,7 @@ fn make_error<'path, I, R>(
     let path_comp = &path[start..];
 
     let err = parse_error.map_position(|p| p.translate_position(path_comp));
-    let err_position = err.position;
-    let pos = start + err_position;
+    let err_pos = start + err.position;
     let mut msg = "";
 
     let errkind = {
@@ -96,7 +95,7 @@ fn make_error<'path, I, R>(
         }
     }
 
-    error::ErrorInfo::new(kind, path, start, end, pos, msg)
+    error::ErrorInfo::new(kind, path, start, end, err_pos, msg)
 }
 
 // ===========================================================================

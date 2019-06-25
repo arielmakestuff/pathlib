@@ -80,6 +80,10 @@ impl ParseError {
     pub fn kind(&self) -> ParseErrorKind {
         self._kind
     }
+
+    pub fn msg(&self) -> &str {
+        &self.msg
+    }
 }
 
 impl Error for ParseError {

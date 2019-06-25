@@ -8,10 +8,10 @@ test feature=default_feature:
     cargo test --all --no-default-features --features {{feature}}
 
 cov output=default_output:
-    cargo tarpaulin -v -o {{output}} --exclude-files src/unix/windows_iter.rs src/windows/path.rs src/windows/windows_iter.rs src/windows/iter/parser.rs src/unix/iter/parser.rs tests/*
+    cargo tarpaulin -v -o {{output}} --exclude-files src/unix/windows_iter.rs src/windows/path.rs src/windows/windows_iter.rs src/windows/iter/parser.rs src/unix/iter/parser.rs benches/* tests/*
 
 cov-parser-iter output=default_output:
-    cargo tarpaulin -v -o {{output}} --no-default-features --features parser-iter --exclude-files src/unix/windows_iter.rs src/windows/path.rs src/windows/windows_iter.rs src/windows/iter/manual.rs src/unix/iter/manual.rs tests/*
+    cargo tarpaulin -v -o {{output}} --no-default-features --features parser-iter --exclude-files src/unix/windows_iter.rs src/windows/path.rs src/windows/windows_iter.rs src/windows/iter/manual.rs src/unix/iter/manual.rs benches/* tests/*
 
 kcov:
     #!/usr/bin/bash

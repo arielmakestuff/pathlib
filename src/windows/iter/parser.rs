@@ -86,6 +86,11 @@ fn make_error<'path, I, R>(
 
     let mut end = start;
     for (i, el) in path_comp.iter().enumerate() {
+        let cur_pos = start + i;
+        if cur_pos < err_pos {
+            continue;
+        }
+
         match el {
             b'/' | b'\\' => {
                 end = start + i;
